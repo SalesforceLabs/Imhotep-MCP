@@ -3,22 +3,25 @@
 @Author         Mitch Lynch (mitch.lynch@salesforce.com)
 @Copyright      Copyright (c) 2026 Salesforce, Inc. All rights reserved.
 @Date           8/2/2026
-@Description    imhotep_get_story — open one Story by number, Id, URL, or title fragment.
-                The Increment-1 proof of the end-to-end pipeline (resolve → namespaced SOQL
-                → shaped result). Rich-text bodies are returned as raw HTML here; HTML→Markdown
-                conversion and the include options (children/tags) arrive in Increment 2.
-                Plan §5.1, §5.5.
+@Description    imhotep_get_story — open one Story by number, Id, URL, or title fragment, with
+                selectable related data via `include`: bodies (the four rich-text fields, HTML→
+                Markdown), children (child Stories), and tags. All three are on by default (§5.4);
+                on an ambiguous/missing reference, returns candidates rather than "not found".
+                Plan §5.1, §5.4, §5.5.
 *******************************************************************************************/
 
 import { z } from 'zod';
 import type { Connection } from 'jsforce';
-import type { ImhotepConfig, ObjectConfig } from '../config/schema.js';
+import type { ImhotepConfig } from '../config/schema.js';
 import { nsApiName } from '../util/namespace.js';
-import { classifyRecordRef } from '../util/recordRef.js';
-import { toImhotepError } from '../salesforce/errors.js';
+import { htmlToMarkdown } from '../util/richtext.js';
+import { selectClause, selectFields, shapeRecord, soqlEscape } from '../salesforce/query.js';
 import { withConnection } from '../salesforce/connection.js';
+import { resolveOne, resolveIncludes } from '../salesforce/resolve.js';
+import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
-/** Zod raw shape for the tool's input (namespace-free, human-friendly). */
+const AVAILABLE_INCLUDES = ['bodies', 'children', 'tags'] as const;
+
 export const getStoryInputShape = {
   story: z
     .string()
@@ -26,6 +29,13 @@ export const getStoryInputShape = {
     .describe(
       'The Story to open: a Story number (e.g. "528", "S-528", "S000528"), an 18/15-char ' +
         'Salesforce Id, a pasted record URL, or a Title fragment.',
+    ),
+  include: z
+    .array(z.enum(AVAILABLE_INCLUDES))
+    .optional()
+    .describe(
+      'Related data to pull: "bodies" (rich-text fields as Markdown), "children" (child Stories), ' +
+        '"tags". Omit to use the configured defaults (all three on by default).',
     ),
   org: z
     .string()
@@ -35,107 +45,105 @@ export const getStoryInputShape = {
 
 export type GetStoryInput = z.infer<z.ZodObject<typeof getStoryInputShape>>;
 
-/** Build the SELECT field list (namespaced) for a Story query from the config field map. */
-function storySelectFields(story: ObjectConfig): { logical: string; api: string }[] {
-  return Object.entries(story.fields).map(([logical, api]) => ({
-    logical,
-    api: nsApiName(api),
-  }));
-}
-
-/** Escape a value for safe inclusion in a SOQL string literal. */
-function soqlEscape(value: string): string {
-  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-}
-
-/** Shape a raw SObject row into a namespace-free, logical-keyed result object. */
-function shapeStory(
-  row: Record<string, unknown>,
-  fields: { logical: string; api: string }[],
-): Record<string, unknown> {
-  const out: Record<string, unknown> = { id: row.Id };
-  for (const { logical, api } of fields) {
-    out[logical] = row[api] ?? null;
-  }
-  return out;
-}
-
-/** The result returned to the caller. */
 export interface GetStoryResult {
-  /** Present when exactly one Story matched. */
   story?: Record<string, unknown>;
-  /** Present (instead of `story`) when the reference was ambiguous or missed — candidates to choose from. */
   candidates?: Array<Record<string, unknown>>;
-  /** Human-readable note (e.g. "no exact match; here are close candidates"). */
-  note?: string;
+  note?: string | undefined;
 }
 
-/**
- * Core logic for get_story. Resolves the reference, queries the org (as the auth'd user),
- * and returns either a single story or a candidate list. Errors are translated (§6).
- */
 export async function getStory(
   input: GetStoryInput,
   config: ImhotepConfig,
 ): Promise<GetStoryResult> {
-  const story = config.objects.story;
-  if (!story) throw new Error('Story object is not configured.');
+  const storyObj = config.objects.story;
+  if (!storyObj) throw new Error('Story object is not configured.');
 
-  const ref = classifyRecordRef(input.story, { allowStoryNumber: true });
-  const fields = storySelectFields(story);
-  const selectList = ['Id', ...fields.map((f) => f.api)].join(', ');
-  const sobject = nsApiName(story.apiName);
-  const storyNumberApi = nsApiName(story.storyNumberField ?? 'Story_Number__c');
-  const nameApi = story.nameField ?? 'Name';
-
-  const org = input.org;
-  const apiVersion = config.apiVersion;
+  const includes = resolveIncludes(
+    input.include,
+    config.defaults?.getStory?.include,
+    [...AVAILABLE_INCLUDES],
+  );
 
   try {
-    return await withConnection(org, apiVersion, async (conn) => {
-      // 1) Direct fetch by Id (from a bare Id or a parsed URL).
-      if (ref.id) {
-        const soql = `SELECT ${selectList} FROM ${sobject} WHERE Id = '${soqlEscape(ref.id)}' LIMIT 1`;
-        const res = await conn.query<Record<string, unknown>>(soql);
-        if (res.records.length === 1) return { story: shapeStory(res.records[0]!, fields) };
-        return { candidates: [], note: `No Story found with Id ${ref.id}${org ? ` in org "${org}"` : ''}.` };
+    return await withConnection(input.org, config.apiVersion, async (conn) => {
+      const resolved = await resolveOne(conn, storyObj, input.story, {
+        org: input.org,
+        allowStoryNumber: true,
+      });
+      if (!resolved.record) {
+        return { candidates: resolved.candidates ?? [], note: resolved.note };
+      }
+      const story = resolved.record;
+
+      // bodies: convert the four rich-text fields HTML→Markdown; when omitted, drop them so the
+      // result stays skinny (they're the heaviest fields).
+      const bodyFields = storyObj.richTextFields ?? [];
+      if (includes.includes('bodies')) {
+        for (const logical of bodyFields) {
+          if (logical in story) story[logical] = htmlToMarkdown(story[logical] as string | null);
+        }
+      } else {
+        for (const logical of bodyFields) delete story[logical];
       }
 
-      // 2) Exact fetch by normalized Story number.
-      if (ref.storyNumber) {
-        const soql = `SELECT ${selectList} FROM ${sobject} WHERE ${storyNumberApi} = '${soqlEscape(
-          ref.storyNumber,
-        )}' LIMIT 1`;
-        const res = await conn.query<Record<string, unknown>>(soql);
-        if (res.records.length === 1) return { story: shapeStory(res.records[0]!, fields) };
-        // Miss: fall through to a fuzzy probe so we return candidates, not "not found" (§5.1).
-        return probeCandidates(conn, { selectList, sobject, nameApi, fragment: ref.storyNumber }, fields, org);
+      if (includes.includes('children')) {
+        story.children = await fetchChildren(conn, config, story.id as string);
+      }
+      if (includes.includes('tags')) {
+        story.tags = await fetchTags(conn, config, story.id as string);
       }
 
-      // 3) Title fragment → candidate search.
-      return probeCandidates(conn, { selectList, sobject, nameApi, fragment: ref.fragment ?? ref.raw }, fields, org);
+      return { story };
     });
   } catch (err) {
-    throw toImhotepError(err, { org: org ?? '(default)', object: 'Story' });
+    if (err instanceof ImhotepError) throw err;
+    throw toImhotepError(err, { org: input.org ?? '(default)', object: 'Story' });
   }
 }
 
-/** Fuzzy candidate probe by Name LIKE fragment. */
-async function probeCandidates(
+/** Fetch child Stories (skinny — no bodies) via the Parent_Story lookup. */
+async function fetchChildren(
   conn: Connection,
-  q: { selectList: string; sobject: string; nameApi: string; fragment: string },
-  fields: { logical: string; api: string }[],
-  org: string | undefined,
-): Promise<GetStoryResult> {
-  const like = `%${soqlEscape(q.fragment)}%`;
-  const soql = `SELECT ${q.selectList} FROM ${q.sobject} WHERE ${q.nameApi} LIKE '${like}' ORDER BY ${q.nameApi} LIMIT 10`;
+  config: ImhotepConfig,
+  parentId: string,
+): Promise<Array<Record<string, unknown>>> {
+  const storyObj = config.objects.story!;
+  const richText = new Set(storyObj.richTextFields ?? []);
+  const fields = selectFields(storyObj).filter(
+    (f) => !richText.has(f.logical) || f.logical === 'title',
+  );
+  const select = ['Id', ...fields.map((f) => f.api)].join(', ');
+  const sobject = nsApiName(storyObj.apiName);
+  const parentApi = nsApiName(storyObj.fields.parentStory ?? 'Parent_Story__c');
+  const numApi = nsApiName(storyObj.fields.storyNumber ?? 'Story_Number__c');
+  const soql = `SELECT ${select} FROM ${sobject} WHERE ${parentApi} = '${soqlEscape(parentId)}' ORDER BY ${numApi} ASC LIMIT 500`;
   const res = await conn.query<Record<string, unknown>>(soql);
-  if (res.records.length === 1) return { story: shapeStory(res.records[0]!, fields) };
-  return {
-    candidates: res.records.map((r) => shapeStory(r, fields)),
-    note:
-      res.records.length === 0
-        ? `No Story matched "${q.fragment}"${org ? ` in org "${org}"` : ''}.`
-        : `No exact match for "${q.fragment}"; ${res.records.length} candidate(s) returned.`,
-  };
+  return res.records.map((r) => shapeRecord(r, fields));
+}
+
+/**
+ * Fetch the Story's applied Tags via the Tag_Assignment junction, returning the Tag records
+ * (shaped). Uses a semi-join so we return Tags directly rather than raw assignments.
+ */
+async function fetchTags(
+  conn: Connection,
+  config: ImhotepConfig,
+  storyId: string,
+): Promise<Array<Record<string, unknown>>> {
+  const tagObj = config.objects.tag;
+  const taObj = config.objects.tagAssignment;
+  if (!tagObj || !taObj) return [];
+  const fields = selectFields(tagObj);
+  const select = selectClause(tagObj);
+  const tagSobject = nsApiName(tagObj.apiName);
+  const taSobject = nsApiName(taObj.apiName);
+  const taStory = nsApiName(taObj.fields.story ?? 'Story__c');
+  const taTag = nsApiName(taObj.fields.tag ?? 'Tag__c');
+  const nameApi = tagObj.nameField ?? 'Name';
+  const soql =
+    `SELECT ${select} FROM ${tagSobject} WHERE Id IN ` +
+    `(SELECT ${taTag} FROM ${taSobject} WHERE ${taStory} = '${soqlEscape(storyId)}') ` +
+    `ORDER BY ${nameApi} ASC LIMIT 200`;
+  const res = await conn.query<Record<string, unknown>>(soql);
+  return res.records.map((r) => shapeRecord(r, fields));
 }

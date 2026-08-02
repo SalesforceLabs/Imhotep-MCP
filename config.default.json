@@ -17,8 +17,15 @@
         "releaseCount": "Release_Count__c",
         "resourceLinkCount": "Resource_Link_Count__c"
       },
+      "richTextFields": ["description"],
       "picklists": {
         "status": ["Planning", "Active", "Completed"]
+      },
+      "childRelationships": {
+        "releases": "Releases__r",
+        "resources": "Resource_Links__r",
+        "metadataComponents": "Metadata_Components__r",
+        "members": "Project_Members__r"
       }
     },
 
@@ -41,9 +48,13 @@
         "notes": "Notes__c",
         "description": "Description__c"
       },
+      "richTextFields": ["notes", "description"],
       "picklists": {
         "status": ["Planning", "Active", "Accepted"],
         "releaseMode": ["Standard", "Simple"]
+      },
+      "childRelationships": {
+        "stories": "Stories__r"
       }
     },
 
@@ -84,6 +95,46 @@
       "recordTypes": {
         "available": ["Simple", "Standard"],
         "default": "Standard"
+      },
+      "childRelationships": {
+        "children": "ChildStories__r",
+        "tagAssignments": "Tag_Assignments__r",
+        "metadataChanges": "Metadata_Component_Changes__r",
+        "testScenarios": "Test_Scenarios__r",
+        "testResults": "Test_Results__r"
+      }
+    },
+
+    "resourceLink": {
+      "apiName": "Resource_Link__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "fields": {
+        "name": "Name",
+        "project": "Project__c",
+        "type": "Type__c",
+        "url": "URL__c"
+      }
+    },
+
+    "tag": {
+      "apiName": "Tag__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "fields": {
+        "name": "Name",
+        "project": "Project__c"
+      }
+    },
+
+    "tagAssignment": {
+      "apiName": "Tag_Assignment__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "fields": {
+        "name": "Name",
+        "story": "Story__c",
+        "tag": "Tag__c"
       }
     }
   },

@@ -32,6 +32,8 @@ export interface ObjectConfig {
     available: string[];
     default: string;
   };
+  /** Logical include-name → child-relationship API name (un-prefixed), for subqueries. */
+  childRelationships?: Record<string, string>;
 }
 
 /** Structural rules the server enforces. */
