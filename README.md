@@ -1,5 +1,8 @@
 # Imhotep MCP Server
 
+> **Status:** In active development toward v1. Capabilities marked _(coming in v1)_ below are on
+> the way; this README will fill in as they land.
+
 > _Laying the foundation stones…_
 
 An [MCP](https://modelcontextprotocol.io) server that lets you work with your
@@ -11,9 +14,6 @@ enforces your permissions.
 
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
-
-> **Status:** In active development toward v1. Capabilities marked _(coming in v1)_ below are on
-> the way; this README will fill in as they land.
 
 ## Prerequisites
 
@@ -38,6 +38,11 @@ record URL) and results respect your Salesforce permissions.
   returns close matches when the reference is ambiguous.
 - _More read, write, and configuration tools coming in v1 — see [Getting started](#getting-started)
   as they land._
+
+## Configuration
+
+_(coming in v1)_ Point the server at the org where Imhotep is installed and tailor its defaults —
+set once globally, or per project. Details will be documented here as configuration lands.
 
 ## Development
 
