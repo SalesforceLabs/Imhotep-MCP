@@ -12,10 +12,7 @@ enforces your permissions.
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
 
-> **Status: pre-release scaffold.** This repository currently contains only project structure and
-> tooling. No tools are implemented yet. See
-> [`docs/plans/imhotep-mcp-server-2026-08-01.md`](docs/plans/imhotep-mcp-server-2026-08-01.md) for
-> the full design and phased build plan.
+> **Status:** In active development toward v1.
 
 ## Prerequisites
 
@@ -48,7 +45,6 @@ src/            server source
   util/         shared helpers (namespace, rich text, record references)
 skill/          the shipped skill (judgment layer for AI clients)
 tests/          test suite
-docs/plans/     design + build plan
 ```
 
 ## License

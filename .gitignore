@@ -22,6 +22,10 @@ coverage/
 .imhotep/
 imhotep.config.json
 
+# Internal dev notes — plans, increment build docs, decision journals.
+# LOCAL ONLY: these are the author's working notes, not product documentation.
+docs/plans/
+
 # Editor / OS
 .DS_Store
 .idea/
