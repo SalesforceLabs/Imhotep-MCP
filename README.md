@@ -31,13 +31,30 @@ _(Installation and MCP-client setup instructions coming in v1.)_
 
 ## Tools
 
-Each tool maps to a single intent; inputs are human-friendly (a Story number, name, Id, or pasted
-record URL) and results respect your Salesforce permissions.
+Each tool maps to a single intent. Inputs are human-friendly — a Story number, a name, a
+Salesforce Id, or a pasted record URL all work wherever a record is expected — and results
+respect your Salesforce permissions.
 
+**Navigate & read**
+
+- **`imhotep_list_projects`** — find or list Projects by name and/or status.
+- **`imhotep_get_project`** — open a Project; optionally include its `releases` and `resources`
+  (Resource Links).
+- **`imhotep_list_releases`** — list a Project's Releases, with points, dates, and a backlog
+  filter.
+- **`imhotep_get_release`** — open a Release; optionally include its `stories`.
 - **`imhotep_get_story`** — open a Story by number (e.g. `S000528`), Id, URL, or title fragment;
-  returns close matches when the reference is ambiguous.
-- _More read, write, and configuration tools coming in v1 — see [Getting started](#getting-started)
-  as they land._
+  includes its bodies (as Markdown), child stories, and tags by default. Returns close matches
+  when the reference is ambiguous.
+- **`imhotep_list_stories`** — the workhorse list ("what's in flight", "stories in release X"),
+  with filters for release, project, status, type, assignee, parent story, and tag.
+- **`imhotep_search`** — free-text search across Stories, Projects, or Releases when you don't
+  have an exact name or number.
+
+Rich-text fields (Story descriptions, Release notes) are returned as Markdown.
+
+- _Write and configuration tools coming in v1 — see [Getting started](#getting-started) as they
+  land._
 
 ## Configuration
 
