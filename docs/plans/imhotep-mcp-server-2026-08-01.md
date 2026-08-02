@@ -1,7 +1,7 @@
 # Imhotep MCP Server + Skill — Plan
 
-- **Status:** Draft — in refinement
-- **Date:** 2026-08-01
+- **Status:** Approved (Increment 0 complete; signed off 2026-08-02) — ready for Increment 1
+- **Date:** 2026-08-01 (finalized 2026-08-02)
 - **Owner:** Mitch Lynch
 - **Related:** [`sf-skills-reconciliation-2026-07-27.md`](sf-skills-reconciliation-2026-07-27.md)
 - **Design target:** the **managed, namespaced** version of Imhotep App Builder — namespace is
@@ -40,13 +40,71 @@ Setup facts a fresh session needs (they live nowhere else):
   names shown un-prefixed). Before/at build, verify exact API names, picklist values, and record
   types by describing against the managed `iab__` org (the "live picklist confirmation" check in
   §10).
-- **The local prototype skill is superseded.** `~/.claude/skills/imhotep/` exists on the author's
-  machine and may auto-trigger; it is **not** this product and must not be reused or treated as
-  spec (see Framing).
+- **The local prototype skill is superseded.** It has been renamed to
+  `~/.claude/skills/imhotep-prototype/` (freeing the `imhotep/` slot for our shipped skill); it is
+  **not** this product and must not be reused or treated as spec (see Framing). It is
+  **decommissioned in Increment 5** once the shipped skill is installed and proven (§11).
 - **Dev toolchain** (beyond §9's runtime prereqs): Node.js 18+, TypeScript,
-  `@modelcontextprotocol/sdk`, and the `sf` CLI authenticated to the managed `iab__` org.
+  `@modelcontextprotocol/sdk`, `jsforce`, `markdown-it`, `turndown`, `jsonc-parser`, `zod`, and
+  the `sf` CLI authenticated to the managed `iab__` org. (Data-access rationale in §0.)
 - **Process.** The standing gated build process applies: per increment, build → verify → review
   → sign-off; no deploy/publish without explicit approval.
+
+---
+
+## 0. Increment 0 — finalize decisions (locked 2026-08-02)
+
+The design in §§1–12 is settled and unchanged. This section records the engineering decisions
+resolved at finalize so the build doesn't improvise them. Salesforce-specific claims below were
+grounded against the official docs during review (guest Support Knowledge REST API §5.3; `sf`
+CLI access-token pattern §6 — both confirmed).
+
+**Data-access architecture (implements §4.1, §6).**
+- **Auth:** shell `sf org display --json` for the resolved org to obtain `accessToken` +
+  `instanceUrl` (the documented "CLI-as-connected-app" pattern). No tokens printed or persisted
+  by the server (§6 token hygiene).
+- **API client:** **`jsforce`** for SOQL, CRUD, and describe against the org's REST API — chosen
+  over raw `fetch` (better structured output, describe caching, error surfacing) and over
+  shelling `sf data` per call (avoids per-call process-spawn latency). `sf` is used *only* for
+  auth; all data operations go through `jsforce` with the CLI-provided token.
+- **Session expiry:** on `INVALID_SESSION_ID` / HTTP 401, re-shell `sf org display` once for a
+  fresh token and retry (the CLI auto-refreshes); surface a clear message if re-auth fails.
+- **apiVersion:** ship a pinned default; on first contact discover the org's max via
+  `/services/data/` and cap the pinned value to it.
+
+**Supporting libraries (implements §5.2 rich text, §7 config).**
+- **Rich text:** `markdown-it` (Markdown→HTML) + `turndown` (HTML→Markdown), constrained to the
+  HTML tag subset Salesforce rich-text fields accept.
+- **Config:** `jsonc-parser` — supports the commented `.jsonc` config (§7.4) *and*
+  comment-preserving in-place edits for `imhotep_set_config` (§5.2). Global writes are atomic
+  (temp file + rename).
+- **Record types:** resolve `Simple`/`Standard` DeveloperName → RecordTypeId via a cached
+  describe/query, per org.
+
+**Skill + global-config delivery (resolves the §4.2/§8 "how does the skill reach the user?" gap).**
+An `npx` MCP install can't place a skill into a client, so **`npx imhotep-mcp init` (and its
+conversational twin `imhotep_init_config`) is the single delivery vehicle** for both:
+- copies the **shipped skill** into `~/.claude/skills/imhotep/` (no-clobber), and
+- scaffolds the starter **global** `~/.imhotep/config.json` (no-clobber).
+
+This keeps the **server itself client-agnostic on npm** (the reason §7.1 uses `~/.imhotep/`, not a
+Claude folder) while placing the inherently-Claude skill artifact in an explicit, Claude-aware
+step. Two distinct config artifacts remain separate and must not be conflated: the package ships
+**`config.default.json`** (read-only baked-in defaults, replaced on update — §7.3), while the
+customer's **`~/.imhotep/config.json`** is scaffolded on demand and *never* overwritten.
+*Roadmap (not v1):* a thin Claude Code plugin bundling the skill + a `.mcp.json` pointing at
+`npx imhotep-mcp`, for one-command Claude Code onboarding without compromising the
+client-agnostic server.
+
+**Verification org.** Verification runs against the **Imhotep managed (`iab__`) install in the
+author's GPS Accelerators *production* org**; the live end-to-end acceptance criteria stand as
+written (§11). The author provides the exact org alias at the increment that first needs it. The
+pre-release `imhotep__` pantry org remains out of scope for build/verify (§Framing). Increments
+1–4 are still authored as unit-testable, org-independent logic where possible, with live
+verification against the managed org at each increment's gate. ⚠️ **Because verification is a
+production org, write-tool testing carries real stakes** — the confirm-before-write discipline
+(§8) and the default-off `autonomousMode` posture (§6) apply during the build itself, and early
+write verification should favor throwaway test Stories under a disposable Release.
 
 ---
 
@@ -93,9 +151,14 @@ customer's own skills, subagents, and instructions are equal-citizen callers.
 
 **Two shipped assets:**
 1. An **MCP server** (`imhotep-mcp`) — the deterministic engine (tools, schema, conversions,
-   validation, auth).
+   validation, auth). The baked-in `config.default.json` ships *inside* this package.
 2. A **skill** — the context and guardrails that teach an AI client *when* and *how* to use
    the tools, and Imhotep's field semantics.
+
+*(Only these two are shipped. The customer's config files — global `~/.imhotep/config.json` and
+project `./imhotep.config.json` — are generated on demand by `init` and owned by the customer,
+never overwritten; they are the customization surface (§4.3), not shipped assets. The one
+genuinely-shipped config is `config.default.json`, bundled inside the server package above.)*
 
 **Success looks like:** the common Imhotep operations are one call each; the app's schema
 lives in exactly one place (the server); and the tools respect the running user's Salesforce
@@ -155,8 +218,18 @@ Three distinct pieces, each with a clear owner and update path. The first two ar
 - all **mechanics**: namespace prefixing, story-number normalization, deriving Story.Project
   from its Release, HTML↔Markdown conversion, refusing system-maintained fields, and
   re-querying to verify writes;
-- **authentication**, by shelling out to the user's installed `sf` CLI (so every call runs as
-  that user, under their Salesforce permissions).
+- **authentication (bootstrap only)**, by shelling out to the user's installed `sf` CLI:
+  `sf org display --target-org <alias> --json` yields the `instanceUrl` + a live `accessToken`,
+  cached per session and refreshed by re-running the CLI on a `401`. This is the CLI's *only*
+  role — so every call runs as that user, under their Salesforce permissions (§6).
+- **data access via the org's REST APIs** (over HTTPS with that token — *not* CLI data
+  commands), through the **`jsforce`** client (§0): SOQL for reads; sObject CRUD for single
+  writes; the **Composite API** for multi-record ops (parent + child stories, or a Story plus its
+  `include` related data in one round-trip); and **describe** for schema/picklist/key-prefix
+  confirmation. Direct REST is chosen over `sf data …` because per-call CLI process spawns are
+  slow and `--values` is hostile to the four rich-text HTML fields (a lesson from the prototype);
+  `jsforce` is chosen over a hand-rolled `fetch` wrapper for its query pagination, describe
+  caching, Composite support, and structured error surfacing (data-access rationale in §0).
 
 Because the schema and mechanics live here, correcting or extending them is a single package
 release — customers get the fix by updating, with nothing to hand-edit.
@@ -199,28 +272,24 @@ narrative guidance in your project's CLAUDE.md."*
 
 ## 5. Functional spec — the tools
 
-> **Design principle:** one tool per user *intent*, not one per API call. Inputs are
-> namespace-free and human-friendly: any record-identifying argument accepts a **name
-> fragment / Story number**, an **18/15-char Id**, or a pasted **record URL** (see the
-> record-reference resolver, §5.5) — so a developer can cut to the chase and paste an Id/URL
-> instead of making Claude root around. The server does the mechanical work behind each verb.
+> **Design principle:** one tool per user *intent*, not one per API call. Tool inputs are
+> namespace-free and human-friendly; the server does the mechanical work behind each verb. (How
+> record-identifying arguments accept a name fragment / Story number, an Id, or a pasted record
+> URL is the record-reference resolver — §5.5.)
 
-Phase column: **v1** = first release; **v1.1** = fast-follow; **later** = roadmap. (v1 scope
-summarized in §5.6.)
+Phase column: **v1** = first release; **v1.1** = fast-follow; **later** = roadmap. (v1 tools are
+marked **v1** in the tables below; the full increment plan is §11.)
 
 ### 5.1 Read tools
 
 | Tool | What it's for | Phase |
 |---|---|---|
-| `imhotep_find_project(project?, status?, org?)` | Locate Project(s) by name fragment/status. The Project is the top of the hierarchy — most work starts by resolving it. Accepts a name fragment, or a pasted Id/URL to short-circuit straight to that record (§5.5). | v1 |
-| `imhotep_get_project(project, include?, org?)` | Open one Project: core fields + point/count rollups, optionally its Releases, Resource Links, Metadata Components, and Members. `project` = name, Id, or record URL (§5.5). | v1 |
-| `imhotep_list_projects(status?, org?)` | Enumerate Projects, optionally filtered by `Planning\|Active\|Completed`. | v1 |
-| `imhotep_find_release(name_fragment, project?, org?)` | Find Release(s) by name fragment; returns each with its Project Id+Name (no second lookup). | v1 |
+| `imhotep_list_projects(query?, status?, org?)` | Locate/enumerate Projects. `query` = a name fragment (or a pasted Id/URL to short-circuit straight to that record — §5.5); `status` filters by `Planning\|Active\|Completed`. With neither, returns all. The Project is the top of the hierarchy — most work starts here. | v1 |
+| `imhotep_get_project(project, include?, org?)` | Open one Project: core fields + point/count rollups, optionally its Releases, Resource Links, Metadata Components, and Members (see the `include` options in §5.4). `project` = name, Id, or record URL (§5.5). | v1 |
 | `imhotep_list_releases(project, status?, is_backlog?, org?)` | List a Project's Releases (with points goal/remaining, dates, and the `iab__Is_Backlog__c` flag). `is_backlog=true` filters to the backlog Release(s). | v1 |
 | `imhotep_get_release(release, include?, org?)` | Open one Release: fields, points rollups, Release Notes, optionally its Stories. | v1 |
 | `imhotep_get_story(story, include?, org?)` | Open one Story with selectable related data (see §5.4). Normalizes `528`/`S-528`/`#s528`→`S-000528`; on a miss, returns candidates rather than "not found." | v1 |
 | `imhotep_list_stories(release?, project?, status?, type?, assigned_to?, parent_story?, tag?, limit=50, org?)` | The workhorse list ("what's in flight," "stories in release X"). Skinny (no bodies), ordered `Priority_Order NULLS LAST, Story_Number`. Filters AND-combined. | v1 |
-| `imhotep_list_resources(project, type?, org?)` | List a Project's Resource Links (Figma, Google Docs, GitHub, Slack, etc.), optionally by type. | v1 |
 | `imhotep_list_metadata_components(project, type?, category?, org?)` | List the Project's catalog of metadata components (Apex, Flow, LWC, …). | v1.1 |
 | `imhotep_list_metadata_changes(story?, release?, project?, org?)` | List Metadata Component Change records, filtered by Story/Release/Project. | v1.1 |
 | `imhotep_get_story_tests(story, org?)` | Return a Story's Test Scenarios and Test Results. | v1.1 |
@@ -236,11 +305,9 @@ system-maintained fields (auto-number, rollups, formulas); run **as the authenti
 | Tool | What it's for | Phase |
 |---|---|---|
 | `imhotep_create_story(release, title, description?, acceptance_criteria?, build_notes?, deployment_checklist?, type="New", status="Defined", parent_story?, points?, priority_order?, record_type?, org?)` | Create a Story. **Derives Project from Release automatically** (avoids the validation trap). `release`/`parent_story` accept Id, name, or number. Set `parent_story` to create a child Story. Returns the new `S-NNNNNN`. | v1 |
-| `imhotep_update_story(story, <writable fields…>, org?)` | Update any writable Story field (scalar or rich-text). Markdown in, HTML out. | v1 |
-| `imhotep_update_status(story, status, org?)` | Convenience wrapper for status transitions; validates against the live/config picklist. | v1 |
+| `imhotep_update_story(story, <writable fields…>, org?)` | Update any writable Story field (scalar or rich-text) — including `status` (validated against the live/config picklist). Markdown in, HTML out. Covers "mark S-528 Ready" via the `status` field (the skill maps that phrasing here). | v1 |
 | `imhotep_transfer_story(story, to_release, org?)` | Move a Story to another Release (reparenting the master-detail — already supported in the Imhotep UI today). Server handles the **Project = Release.Project** invariant (re-points `iab__Project__c` to the target release's project, or refuses a cross-project move with a clear message). "Move to backlog" = transfer to the backlog Release. | v1 |
-| `imhotep_update_release(release, <writable fields…>, org?)` | Update Release fields (status, dates, points goal, backlog flag, description). | v1 |
-| `imhotep_update_release_notes(release, notes_markdown, org?)` | Focused task for authoring/replacing the Release Notes field (`iab__Notes__c`), Markdown → HTML. | v1 |
+| `imhotep_update_release(release, <writable fields…>, org?)` | Update any writable Release field (status, dates, points goal, backlog flag, and rich-text description/Release Notes `iab__Notes__c` — Markdown in, HTML out). | v1 |
 | `imhotep_create_task(story, subject, description?, status?, due_date?, org?)` | Create a **standard Salesforce Task** related to a Story (`WhatId` = Story). Optional feature; note Tasks are hidden on the **Simple** record-type layout. | v1.1 |
 | `imhotep_log_metadata_change(story, component_api_name, metadata_type, change_type="Modified", notes?, org?)` | *Story-related write.* Record that a metadata component changed under a Story — creating/reusing the Metadata Component and creating the Metadata Component Change (junction). Great for AI build loops. | v1.1 |
 | `imhotep_create_test_scenario(story, description?, instructions?, expected_result?, org?)` | *Story-related write.* Create a Test Scenario under a Story. | v1.1 |
@@ -316,7 +383,7 @@ set → shipped default (`Default?` below).
 |---|---|---|---|---|
 | `bodies` | The four rich-text fields, HTML→Markdown | Story | v1 | ✅ on |
 | `children` | Child Stories (via `Parent_Story__c`) | Story self-hierarchy | v1 | ✅ on |
-| `tags` | Applied Tags | Tag Assignment | v1 | off |
+| `tags` | Applied Tags | Tag Assignment | v1 | ✅ on |
 | `metadata_changes` | Logged metadata component changes | Metadata Component Change | v1.1 | off |
 | `tests` | Test Scenarios + Results | Test Scenario / Result | v1.1 | off |
 | `tasks` | Related standard Salesforce Tasks | Task (`WhatId`) | v1.1 | off |
@@ -327,7 +394,10 @@ set → shipped default (`Default?` below).
 So "what's on by default at install" = the ✅ shipped defaults (unless the customer's config
 changes them); "what a later release adds" = new rows become *available* (Phase), each with its
 own shipped default the customer can then re-tune. The same `include` model (and config default
-set) applies to `get_project` and `get_release`.
+set) applies to `get_project` and `get_release`, each with its own option set — notably
+`get_project` offers `releases`, **`resources`** (Resource Links, optionally filtered by type),
+`metadata_components`, and `members`; `get_release` offers `stories`. (Listing a Project's
+Resource Links is done via `get_project(include: ["resources"])` rather than a standalone tool.)
 
 *Record-type note:* on **Simple**-record-type Stories, Child Stories and Tasks are hidden from
 the Imhotep page layout (they're a Standard-story concept). The API doesn't enforce that
@@ -339,13 +409,14 @@ them as a Standard-story feature and not surface them by default for Simple stor
   `story`, `parent_story`, `target`, …) accepts any of: an **18/15-char Salesforce Id**; a
   pasted **record URL** (Lightning or Classic — the server parses the Id out of it); or the
   **human identifier** (name fragment, or normalized Story number `S-NNNNNN`). `get_*` tools
-  resolve to exactly one record; `find_*` tools short-circuit to a direct fetch when handed an
-  Id/URL, otherwise search by fragment. *v1.1 niceties:* parse the **My Domain** from a
-  Lightning URL to help resolve/confirm the target org; validate a pasted Id's **key prefix**
-  against the expected object (via cached describe) to catch a wrong-object paste with a clear
-  message. This resolver applies to **every** Imhotep object, not just Projects — a single
-  shared mechanism every record-taking tool uses, arriving with each tool as it ships (Project /
-  Release / Story / resources in v1; the rest as their tools land).
+  resolve to exactly one record (returning candidates on an ambiguous miss); `list_*` tools
+  short-circuit to a direct fetch when handed an Id/URL, otherwise search/filter by their
+  arguments. *v1.1 niceties:* parse the **My Domain** from a Lightning URL to help
+  resolve/confirm the target org; validate a pasted Id's **key prefix** against the expected
+  object (via cached describe) to catch a wrong-object paste with a clear message. This resolver
+  applies to **every** Imhotep object — a single shared mechanism every record-taking tool uses,
+  arriving with each tool as it ships (Project / Release / Story in v1; the rest as their tools
+  land).
 - **Org resolution precedence:** per-call `org` arg → (My Domain parsed from a pasted URL, if
   any) → project `imhotep.config.json` `defaultOrg` → project `CLAUDE.md` declaration → global
   `~/.imhotep/config.json` `defaultOrg` → error asking the user. (The one-time "which org?"
@@ -362,31 +433,6 @@ them as a Standard-story feature and not surface them by default for Simple stor
 - **Verify-after-write:** write tools re-query and return persisted state (including the
   assigned `S-NNNNNN`).
 
-### 5.6 v1 scope (summary)
-
-v1 = the full read/navigation surface with core-story read depth, the core Story + Release
-writes, and config management:
-
-- **Reads/navigation:** `find_project`, `get_project`, `list_projects`, `find_release`,
-  `list_releases` (+ `is_backlog`), `get_release`, `get_story` (includes: **bodies, children,
-  tags**), `list_stories`, `list_resources`, `search`.
-- **Story writes:** `create_story` (incl. child stories), `update_story`, `update_status`,
-  `transfer_story`.
-- **Release writes:** `update_release`, `update_release_notes` (`iab__Notes__c`).
-- **Config management:** `get_config`, `set_config`, `init_config`.
-
-**v1.1 (fast-follow):**
-- **Read depth:** `get_story` includes `tests` / `metadata_changes` / `tasks`.
-- **Standalone read tools:** `list_metadata_components`, `list_metadata_changes`,
-  `get_story_tests`.
-- **Story-related writes:** `log_metadata_change`, `create_test_scenario`, `record_test_result`;
-  plus `create_task`.
-- **Docs:** `search_docs` (Option A) — ships when the Resource Hub guest-API config is ready.
-- **Niceties:** record-reference My-Domain/key-prefix resolution; preflight permission checks.
-
-**Later:** Files (`attach_file` + `files`/`notes` includes), Tag *writes* (`tag_story`), and
-Chatter (`post_chatter` + `chatter` include).
-
 ---
 
 ## 6. Security & permissions
@@ -398,12 +444,11 @@ resolved org). This is the whole security model, and it's the right one:
   record-type access on every SOQL read and every DML/REST write — automatically.** The server
   neither has nor needs elevated access; it cannot expose data or perform writes the user
   couldn't do themselves in the UI. A user without Create on Story simply gets a create failure.
-- **So we do *not* build a parallel permission model.** Instead the server:
-  1. **Translates access errors** (`INSUFFICIENT_ACCESS_OR_READONLY`, FLS errors,
-     `FIELD_FILTER_VALIDATION_EXCEPTION`, etc.) into plain-language messages naming the object,
-     field, and org — so the user understands *why* and *where*.
-  2. *(v1.1, optional)* **Preflight-checks** object/field accessibility via a describe before
-     composing a large write, to fail fast with a friendly message instead of a raw API error.
+- **So we do *not* build a parallel permission model.** Instead the server **translates access
+  errors** (`INSUFFICIENT_ACCESS_OR_READONLY`, FLS errors, `FIELD_FILTER_VALIDATION_EXCEPTION`,
+  etc.) into plain-language messages naming the object, field, and org — so the user understands
+  *why* and *where*. (Salesforce is the enforcement point; the server just makes its refusals
+  legible.)
 - **Confirmation is separate from permission.** Platform permissions decide what the user
   *can* do; the skill's confirm-before-write discipline decides what they *should* do right
   now (production data). Both apply.
@@ -514,7 +559,11 @@ optionally, an `imhotep-custom/` skill stub — §4.3):
 
 Both **refuse to overwrite** an existing file, so they're safe to run and re-run. (And since
 `imhotep_set_config` auto-creates the file, a customer can also skip scaffolding and just start
-setting values.)
+setting values.) **`init` also places the *shipped* skill** into `~/.claude/skills/imhotep/`
+(no-clobber) and scaffolds the starter **global** `~/.imhotep/config.json` — it is the single
+delivery vehicle for the skill, since an `npx` MCP install can't place a skill into a client
+(full rationale in §0). This is distinct from the optional customer-owned `imhotep-custom/` stub
+above.
 
 **Post-install customization:** the customer edits **their own** `imhotep.config.json` (and
 optional custom skill) and sets only the keys they need to change. They never edit anything
@@ -624,8 +673,9 @@ A **new** shipped skill (distributed with the server) whose entire job is to mak
 use the tools well. Contents:
 
 - **Tool map:** intent → tool (open a story → `imhotep_get_story`; what's in flight →
-  `imhotep_list_stories`; find a release → `imhotep_find_release`; log a metadata change →
-  `imhotep_log_metadata_change`; etc.).
+  `imhotep_list_stories`; list a project's releases → `imhotep_list_releases`; mark a story Ready
+  → `imhotep_update_story(status=…)`; log a metadata change → `imhotep_log_metadata_change`;
+  etc.).
 - **Story field semantics:** the high-value editorial guidance no tool can enforce — Description
   is a *short* user story; implementation detail → Solution Build Notes; acceptance criteria in
   their own field; Deployment Checklist = only manual deploy steps not covered by Work Item
@@ -671,6 +721,12 @@ semver.
   its own product rather than mixed into `SalesforceLabs/Imhotep-App-Builder` (which hosts the
   app source). This keeps MCP versioning/CHANGELOG independent of the app package's release
   cadence.
+  - **Interim repo (in use now): `SFDC-Assets-emu/Imhotep-MCP`** (private). Until the Labs repo
+    is provisioned, development happens in a temporary repo in the `SFDC-Assets-emu` org (where
+    Mitch is a sysadmin), so version control is in place from day one. When
+    `SalesforceLabs/Imhotep-MCP` lands, the history migrates over (add the new remote, push
+    `main` + tags, transfer issues/settings, then retire the interim repo). The npm package name
+    (`imhotep-mcp`, unscoped) is unaffected by the repo move.
 - **npm — account already created: `sf-mitch-lynch`; package name `imhotep-mcp` (unscoped).**
   Command stays `npx imhotep-mcp`. Unscoped means ownership can later be transferred to or
   co-owned with SalesforceLabs **without a rename** (no breaking change to the install command);
@@ -716,21 +772,32 @@ verification tasks to complete during the build:
 
 ## 11. Proposed phasing
 
-- **Increment 0 — Plan finalize.** This doc + final sign-off. *(current)*
+- **Increment 0 — Plan finalize.** This doc + final sign-off. Engineering decisions locked in §0
+  (data access via `sf` token + `jsforce`; rich-text/config libraries; skill+global-config
+  delivery via `init`; verification against the available managed `iab__` org). *(complete —
+  awaiting sign-off)*
 - **Increment 1 — Server skeleton.** `package.json`, `.mcp.json`, config loader (defaults +
   deep-merge), `sf`-CLI auth, namespace/apiVersion plumbing, error translation (§6). Prove
   `imhotep_get_story` end-to-end.
-- **Increment 2 — v1 read/navigation.** Project/Release/Story find/list/get (+ `is_backlog`),
-  resources, search; HTML→Markdown; story-number normalization + fallback probe;
-  record-reference resolver; `get_story` includes **bodies/children/tags**.
+- **Increment 2 — v1 read/navigation.** `list_projects` (query/status) / `get_project`
+  (incl. `resources`) / `list_releases` (+ `is_backlog`) / `get_release` / `get_story` /
+  `list_stories` / `search`; HTML→Markdown; story-number normalization + fallback probe;
+  record-reference resolver; `get_story` includes **bodies/children/tags** (all on by default).
 - **Increment 3 — v1 writes.** `create_story` (Project derivation, Markdown→HTML, child
-  stories), `update_story`, `update_status`, `transfer_story`, `update_release`,
-  `update_release_notes` (`iab__Notes__c`); read-only-field refusal; verify-after-write;
+  stories), `update_story` (incl. the `status` field), `transfer_story`, `update_release`
+  (incl. Release Notes `iab__Notes__c`); read-only-field refusal; verify-after-write;
   `autonomousMode` gating (default off).
 - **Increment 4 — Config-management tools.** `get_config` / `set_config` / `init_config`;
   global + project scopes; deep-merge precedence; working-context resolution.
 - **Increment 5 — Skill.** Author the shipped skill per §8 (tool map, field semantics, confirm
-  discipline, shipped-vs-yours boundary, voice §8.1).
+  discipline, shipped-vs-yours boundary, voice §8.1). **Install & prove locally:** place the
+  shipped skill into `~/.claude/skills/imhotep/` (the slot freed by the prototype rename) and
+  confirm it triggers and drives the v1 tools correctly against the verification org.
+  **Decommission the prototype (gated on that proof):** once the shipped skill is confirmed
+  working, remove `~/.claude/skills/imhotep-prototype/` and any residual references to it, so the
+  built product fully replaces all evidence of the prototype. *(Cross-Claude references outside
+  this repo — CLAUDE.md, memories — are maintained separately by the author; this increment owns
+  the skill-directory cleanup and flags anything else it notices for that separate effort.)*
 - **Increment 6 — Package & publish (v1).** README (prereqs incl. managed-package install +
   `sf` CLI), `CHANGELOG.md`, versioning, `.mcp.json`, `config.default.json`,
   `npx imhotep-mcp init`; confirm npm name; first publish.
@@ -738,7 +805,7 @@ verification tasks to complete during the build:
   standalone read tools (`list_metadata_components`, `list_metadata_changes`, `get_story_tests`);
   Story-related writes (`log_metadata_change`, `create_test_scenario`, `record_test_result`) +
   `create_task`; `search_docs` (once Resource Hub guest-API config + latency are verified);
-  record-reference niceties + preflight permission checks.
+  record-reference My-Domain/key-prefix niceties.
 - **Later (post-v1.1).** Files (`attach_file` + `files`/`notes` includes), Tag writes
   (`tag_story`), Chatter (`post_chatter` + `chatter` include).
 
@@ -806,3 +873,34 @@ Owner-Lead/Builder/Viewer, → User); `Tag__c`/`Tag_Assignment__c`; `Template__c
 **Do-not-write (system-maintained):** auto-numbers (`Story_Number__c`, `C{000000}`, `TS-`, `TR-`),
 rollups (`Total_Points__c`, `Points_Left_to_Complete__c`, counts), formulas
 (`Assigned_to_Current_User__c`).
+
+---
+
+## Changelog
+
+- **2026-08-02 — Prototype decommission.** Prototype skill renamed to `imhotep-prototype`
+  (parallel cross-Claude effort by the author, outside this repo), freeing the `imhotep/` slot.
+  Updated the Kickoff note accordingly and added to **Increment 5**: install the shipped skill
+  into `~/.claude/skills/imhotep/`, prove it locally, then remove `imhotep-prototype` and residual
+  references so the built product fully replaces the prototype. Skill-directory cleanup is owned
+  here; cross-Claude references (CLAUDE.md, memories) are handled in the author's separate effort.
+- **2026-08-02 — Review round (inline comments).** Trimmed the v1 tool surface 19 → 14 after a
+  tool-by-tool review: merged `find_project` into `list_projects(query?, status?)`; cut
+  `find_release` (release search is only meaningful within a project — `list_releases`/`get_release`
+  cover it); cut `update_status` (folded into `update_story`'s `status` field); cut
+  `update_release_notes` (folded into `update_release`'s rich-text handling); folded
+  `list_resources` into `get_project(include:["resources"])`. Flipped the `get_story` `tags`
+  include to **on** by default. Removed the optional v1.1 preflight permission-check (redundant
+  with error translation, adds latency). Reconciled §4.1 to **`jsforce`** (was still describing a
+  `fetch` wrapper — contradicted §0). Removed the redundant §5.6 v1-scope summary. Named the
+  verification org (**GPS Accelerators production**) and flagged production write-testing stakes.
+  Recorded the interim `SFDC-Assets-emu/Imhotep-MCP` repo + migration path in §9.
+- **2026-08-02 — Increment 0 finalize.** Status → *Final — awaiting sign-off*. Added §0 recording
+  locked engineering decisions (data access via `sf org display` token + `jsforce`; session-expiry
+  re-auth; apiVersion capping; rich-text via `markdown-it`/`turndown`; config via `jsonc-parser`
+  with atomic writes; record-type caching). Resolved the §4.2/§8 skill-delivery gap: `init` /
+  `imhotep_init_config` places the shipped skill into `~/.claude/skills/imhotep/` and scaffolds the
+  global `~/.imhotep/config.json` (both no-clobber) — cross-referenced in §7.3; noted a future
+  Claude Code plugin as roadmap. Confirmed a managed `iab__` verification org is available (live
+  §11 acceptance stands). Grounded the guest Support Knowledge REST API (§5.3) and `sf` CLI
+  access-token pattern (§6) against Salesforce docs. No scope changes to §§1–12.
