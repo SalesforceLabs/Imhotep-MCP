@@ -12,7 +12,8 @@ enforces your permissions.
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
 
-> **Status:** In active development toward v1.
+> **Status:** In active development toward v1. Capabilities marked _(coming in v1)_ below are on
+> the way; this README will fill in as they land.
 
 ## Prerequisites
 
@@ -23,6 +24,20 @@ The server targets the **managed** Imhotep package (namespace `iab__`), and ship
    enforced.
 3. **[Node.js](https://nodejs.org) 18+** (to run via `npx`).
 4. **An MCP client** (Claude Code / Claude Desktop / other).
+
+## Getting started
+
+_(Installation and MCP-client setup instructions coming in v1.)_
+
+## Tools
+
+Each tool maps to a single intent; inputs are human-friendly (a Story number, name, Id, or pasted
+record URL) and results respect your Salesforce permissions.
+
+- **`imhotep_get_story`** — open a Story by number (e.g. `S000528`), Id, URL, or title fragment;
+  returns close matches when the reference is ambiguous.
+- _More read, write, and configuration tools coming in v1 — see [Getting started](#getting-started)
+  as they land._
 
 ## Development
 
