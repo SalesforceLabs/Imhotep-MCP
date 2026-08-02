@@ -1,0 +1,109 @@
+{
+  "$comment": "Imhotep MCP — shipped default configuration (the canonical managed-package schema). This file is bundled inside the package and REPLACED on every update. Customers NEVER edit it; they override in ~/.imhotep/config.json (global) or ./imhotep.config.json (project), which are deep-merged over these defaults. See plan §7. Field API names are given WITHOUT the namespace; the server prepends the fixed 'iab__' prefix at runtime (plan §5.5). NOTE: the namespace is hard-coded in the server (src/util/namespace.ts), NOT a config key (plan §7.4).",
+
+  "apiVersion": "62.0",
+
+  "objects": {
+    "project": {
+      "apiName": "Project__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "fields": {
+        "name": "Name",
+        "status": "Status__c",
+        "type": "Type__c",
+        "defaultReleaseMode": "Default_Release_Mode__c",
+        "description": "Description__c",
+        "releaseCount": "Release_Count__c",
+        "resourceLinkCount": "Resource_Link_Count__c"
+      },
+      "picklists": {
+        "status": ["Planning", "Active", "Completed"]
+      }
+    },
+
+    "release": {
+      "apiName": "Release__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "fields": {
+        "name": "Name",
+        "project": "Project__c",
+        "status": "Status__c",
+        "releaseMode": "Release_Mode__c",
+        "isBacklog": "Is_Backlog__c",
+        "startDate": "Start_Date__c",
+        "releaseDate": "Release_Date__c",
+        "pointsGoal": "Points_Goal__c",
+        "pointsAvailable": "Points_Available__c",
+        "totalPoints": "Total_Points__c",
+        "pointsLeftToComplete": "Points_Left_to_Complete__c",
+        "notes": "Notes__c",
+        "description": "Description__c"
+      },
+      "picklists": {
+        "status": ["Planning", "Active", "Accepted"],
+        "releaseMode": ["Standard", "Simple"]
+      }
+    },
+
+    "story": {
+      "apiName": "Story__c",
+      "keyPrefix": null,
+      "nameField": "Name",
+      "storyNumberField": "Story_Number__c",
+      "fields": {
+        "title": "Name",
+        "storyNumber": "Story_Number__c",
+        "description": "Story_Description__c",
+        "acceptanceCriteria": "Acceptance_Criteria_Tests__c",
+        "buildNotes": "Solution_Build_Notes__c",
+        "deploymentChecklist": "Deployment_Checklist__c",
+        "status": "Status__c",
+        "type": "Story_Type__c",
+        "release": "Release__c",
+        "project": "Project__c",
+        "parentStory": "Parent_Story__c",
+        "requestedRelease": "Requested_Release__c",
+        "assigned": "Assigned__c",
+        "points": "Points__c",
+        "estimatedPoints": "Estimated_Points__c",
+        "actualPoints": "Actual_Points__c",
+        "priorityOrder": "Priority_Order__c"
+      },
+      "richTextFields": [
+        "description",
+        "acceptanceCriteria",
+        "buildNotes",
+        "deploymentChecklist"
+      ],
+      "picklists": {
+        "status": ["Blocked", "Defined", "Building", "Testing", "Ready", "Deployed"],
+        "type": ["New", "Change", "Defect"]
+      },
+      "recordTypes": {
+        "available": ["Simple", "Standard"],
+        "default": "Standard"
+      }
+    }
+  },
+
+  "invariants": {
+    "$comment": "Structural rules the server enforces (plan §5.2, §5.5). Not customer-editable in normal use.",
+    "storyProjectEqualsReleaseProject": true
+  },
+
+  "readOnlyFields": {
+    "$comment": "System-maintained fields the server refuses to write (plan Appendix 'Do-not-write'). Logical names per object.",
+    "story": ["storyNumber", "points"],
+    "release": ["totalPoints", "pointsLeftToComplete"],
+    "project": ["releaseCount", "resourceLinkCount"]
+  },
+
+  "defaults": {
+    "$comment": "Shipped default `include` sets pulled when a get_* caller omits `include` (plan §5.4). Customer config can override.",
+    "getStory": { "include": ["bodies", "children", "tags"] },
+    "getRelease": { "include": [] },
+    "getProject": { "include": [] }
+  }
+}

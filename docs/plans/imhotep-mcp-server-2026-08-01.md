@@ -60,15 +60,20 @@ grounded against the official docs during review (guest Support Knowledge REST A
 CLI access-token pattern §6 — both confirmed).
 
 **Data-access architecture (implements §4.1, §6).**
-- **Auth:** shell `sf org display --json` for the resolved org to obtain `accessToken` +
-  `instanceUrl` (the documented "CLI-as-connected-app" pattern). No tokens printed or persisted
-  by the server (§6 token hygiene).
+- **Auth:** shell the `sf` CLI to obtain the running user's credentials — the **access token
+  from `sf org auth show-access-token --json`** and the **instance URL from `sf org display
+  --json`**. ⚠️ Current `sf` versions **mask** the token in `org display` output
+  (`[REDACTED] Use 'sf org auth show-access-token' to view`), so the token *must* come from the
+  dedicated `show-access-token` command — reading it from `org display` yields a placeholder,
+  not a credential (Increment-1 finding; see changelog). No tokens printed or persisted by the
+  server (§6 token hygiene).
 - **API client:** **`jsforce`** for SOQL, CRUD, and describe against the org's REST API — chosen
   over raw `fetch` (better structured output, describe caching, error surfacing) and over
   shelling `sf data` per call (avoids per-call process-spawn latency). `sf` is used *only* for
-  auth; all data operations go through `jsforce` with the CLI-provided token.
-- **Session expiry:** on `INVALID_SESSION_ID` / HTTP 401, re-shell `sf org display` once for a
-  fresh token and retry (the CLI auto-refreshes); surface a clear message if re-auth fails.
+  auth; all data operations go through `jsforce` with the CLI-provided token. Verified end-to-end
+  against the live managed `iab__` org.
+- **Session expiry:** on `INVALID_SESSION_ID`, re-shell the CLI once for a fresh token and retry
+  (the CLI auto-refreshes); surface a clear message if re-auth fails.
 - **apiVersion:** ship a pinned default; on first contact discover the org's max via
   `/services/data/` and cap the pinned value to it.
 
@@ -143,7 +148,7 @@ customer's own skills, subagents, and instructions are equal-citizen callers.
 - **Single-purpose, predictably named verbs** that compose cleanly into someone else's
   automation.
 - **Structured, machine-usable output** (not just prose for a human) so a subagent can act on
-  a result — e.g. use the returned `S-NNNNNN` or record Id in its next step.
+  a result — e.g. use the returned `SNNNNNN` or record Id in its next step.
 - **Non-interactive safety.** Because a subagent may call a write tool without a human present,
   the server's own guarantees (permission enforcement §6, read-only-field refusal, validation-
   safe writes) — not just the skill's confirm-before-write prompt — are what keep automated use
@@ -218,10 +223,11 @@ Three distinct pieces, each with a clear owner and update path. The first two ar
 - all **mechanics**: namespace prefixing, story-number normalization, deriving Story.Project
   from its Release, HTML↔Markdown conversion, refusing system-maintained fields, and
   re-querying to verify writes;
-- **authentication (bootstrap only)**, by shelling out to the user's installed `sf` CLI:
-  `sf org display --target-org <alias> --json` yields the `instanceUrl` + a live `accessToken`,
-  cached per session and refreshed by re-running the CLI on a `401`. This is the CLI's *only*
-  role — so every call runs as that user, under their Salesforce permissions (§6).
+- **authentication (bootstrap only)**, by shelling out to the user's installed `sf` CLI: the
+  access token from `sf org auth show-access-token` + the `instanceUrl` from `sf org display`
+  (the latter masks the token — §0). Cached per session, refreshed by re-running the CLI on an
+  expired session. This is the CLI's *only* role — so every call runs as that user, under their
+  Salesforce permissions (§6).
 - **data access via the org's REST APIs** (over HTTPS with that token — *not* CLI data
   commands), through the **`jsforce`** client (§0): SOQL for reads; sObject CRUD for single
   writes; the **Composite API** for multi-record ops (parent + child stories, or a Story plus its
@@ -288,7 +294,7 @@ marked **v1** in the tables below; the full increment plan is §11.)
 | `imhotep_get_project(project, include?, org?)` | Open one Project: core fields + point/count rollups, optionally its Releases, Resource Links, Metadata Components, and Members (see the `include` options in §5.4). `project` = name, Id, or record URL (§5.5). | v1 |
 | `imhotep_list_releases(project, status?, is_backlog?, org?)` | List a Project's Releases (with points goal/remaining, dates, and the `iab__Is_Backlog__c` flag). `is_backlog=true` filters to the backlog Release(s). | v1 |
 | `imhotep_get_release(release, include?, org?)` | Open one Release: fields, points rollups, Release Notes, optionally its Stories. | v1 |
-| `imhotep_get_story(story, include?, org?)` | Open one Story with selectable related data (see §5.4). Normalizes `528`/`S-528`/`#s528`→`S-000528`; on a miss, returns candidates rather than "not found." | v1 |
+| `imhotep_get_story(story, include?, org?)` | Open one Story with selectable related data (see §5.4). Normalizes `528`/`S-528`/`#s528`→`S000528`; on a miss, returns candidates rather than "not found." | v1 |
 | `imhotep_list_stories(release?, project?, status?, type?, assigned_to?, parent_story?, tag?, limit=50, org?)` | The workhorse list ("what's in flight," "stories in release X"). Skinny (no bodies), ordered `Priority_Order NULLS LAST, Story_Number`. Filters AND-combined. | v1 |
 | `imhotep_list_metadata_components(project, type?, category?, org?)` | List the Project's catalog of metadata components (Apex, Flow, LWC, …). | v1.1 |
 | `imhotep_list_metadata_changes(story?, release?, project?, org?)` | List Metadata Component Change records, filtered by Story/Release/Project. | v1.1 |
@@ -304,7 +310,7 @@ system-maintained fields (auto-number, rollups, formulas); run **as the authenti
 
 | Tool | What it's for | Phase |
 |---|---|---|
-| `imhotep_create_story(release, title, description?, acceptance_criteria?, build_notes?, deployment_checklist?, type="New", status="Defined", parent_story?, points?, priority_order?, record_type?, org?)` | Create a Story. **Derives Project from Release automatically** (avoids the validation trap). `release`/`parent_story` accept Id, name, or number. Set `parent_story` to create a child Story. Returns the new `S-NNNNNN`. | v1 |
+| `imhotep_create_story(release, title, description?, acceptance_criteria?, build_notes?, deployment_checklist?, type="New", status="Defined", parent_story?, points?, priority_order?, record_type?, org?)` | Create a Story. **Derives Project from Release automatically** (avoids the validation trap). `release`/`parent_story` accept Id, name, or number. Set `parent_story` to create a child Story. Returns the new `SNNNNNN`. | v1 |
 | `imhotep_update_story(story, <writable fields…>, org?)` | Update any writable Story field (scalar or rich-text) — including `status` (validated against the live/config picklist). Markdown in, HTML out. Covers "mark S-528 Ready" via the `status` field (the skill maps that phrasing here). | v1 |
 | `imhotep_transfer_story(story, to_release, org?)` | Move a Story to another Release (reparenting the master-detail — already supported in the Imhotep UI today). Server handles the **Project = Release.Project** invariant (re-points `iab__Project__c` to the target release's project, or refuses a cross-project move with a clear message). "Move to backlog" = transfer to the backlog Release. | v1 |
 | `imhotep_update_release(release, <writable fields…>, org?)` | Update any writable Release field (status, dates, points goal, backlog flag, and rich-text description/Release Notes `iab__Notes__c` — Markdown in, HTML out). | v1 |
@@ -408,7 +414,7 @@ them as a Standard-story feature and not surface them by default for Simple stor
 - **Record-reference resolution:** every record-identifying argument (`project`, `release`,
   `story`, `parent_story`, `target`, …) accepts any of: an **18/15-char Salesforce Id**; a
   pasted **record URL** (Lightning or Classic — the server parses the Id out of it); or the
-  **human identifier** (name fragment, or normalized Story number `S-NNNNNN`). `get_*` tools
+  **human identifier** (name fragment, or normalized Story number `SNNNNNN`). `get_*` tools
   resolve to exactly one record (returning candidates on an ambiguous miss); `list_*` tools
   short-circuit to a direct fetch when handed an Id/URL, otherwise search/filter by their
   arguments. *v1.1 niceties:* parse the **My Domain** from a Lightning URL to help
@@ -431,7 +437,7 @@ them as a Standard-story feature and not surface them by default for Simple stor
   configurable); tool inputs stay namespace-free.
 - **Rich text:** Markdown↔HTML both directions.
 - **Verify-after-write:** write tools re-query and return persisted state (including the
-  assigned `S-NNNNNN`).
+  assigned `SNNNNNN`).
 
 ---
 
@@ -460,7 +466,40 @@ resolved org). This is the whole security model, and it's the right one:
   The server reads the flag and can warn/annotate when writes occur under it, so unattended
   writes are always an explicit, auditable choice — never the default.
 - **Token hygiene:** the server never prints access tokens; tokens live only in the
-  server process and are obtained fresh from the `sf` CLI per session.
+  server process and are obtained fresh from the `sf` CLI per session. The access token is
+  captured in `auth.ts`, passed directly to the jsforce connection, and never returned to the
+  model, written to the MCP transcript, or logged (see the §6.1 decision record).
+
+### 6.1 Auth architecture — decision record (re: `sf` CLI issue #3560)
+
+**Context.** Salesforce CLI issue [forcedotcom/cli#3560](https://github.com/forcedotcom/cli/issues/3560)
+(effective 2026-05-27) removes secrets — Access Tokens, passwords, SFDX Auth URLs — from the
+output of `sf org display`, `sf org list`, etc. (both human-readable and `--json`). The stated
+motivation is that credentials in command output are risky **in AI-assisted environments**, where
+an agent may capture them into context/transcripts/logs. The sanctioned programmatic replacement
+is the dedicated command **`sf org auth show-access-token --json`**. The issue also recommends
+**prohibiting `sf org auth show-*` from an AI coding agent's command permissions**, and notes a
+temporary `SF_TEMP_SHOW_SECRETS=true` escape hatch to be removed Summer 2026.
+
+**Decision (v1).** The server obtains the token via `sf org auth show-access-token --json` (the
+supported replacement) and the instance URL via `sf org display`. This is consistent with #3560,
+because #3560's warning targets *an AI agent running the command directly* (token → agent output →
+model/transcript/logs). Here the command runs **inside the MCP server process**: the token is held
+in memory, passed straight to the jsforce connection, and **never surfaced** to the model, the MCP
+transcript, or logs — the same containment model as the `sf` CLI itself or an OAuth integration
+holding a credential. The guardrail is enforced by convention in `auth.ts` (documented there) and
+by the token-hygiene rule above: no tool result, error message, or stderr line may carry the token.
+*Note:* customers whose environments block `sf org auth show-*` for agent processes would need the
+env escape hatch or the alternative below — a data point for the v1.1/Increment-6 review.
+
+**Open question (deferred to Increment 6 — package & publish).** Whether CLI-token extraction is
+the right *long-term* auth model for a shipped product, versus a **connected-app OAuth flow** (JWT
+bearer or web-server) where Imhotep MCP is authorized as its own OAuth client and never scrapes the
+CLI's credential — the "deliberate user intent" model #3560 advocates. OAuth is heavier (connected
+app + per-org setup) but is the platform-sanctioned pattern for a first-class integration. A third
+option — shelling `sf data`/`sf sobject` so the server never handles a raw token at all — is also
+aligned with the security direction but trades away jsforce's speed/features (§0). Decide before
+first publish; v1 ships on the CLI-token model documented above.
 
 ---
 
@@ -800,7 +839,9 @@ verification tasks to complete during the build:
   the skill-directory cleanup and flags anything else it notices for that separate effort.)*
 - **Increment 6 — Package & publish (v1).** README (prereqs incl. managed-package install +
   `sf` CLI), `CHANGELOG.md`, versioning, `.mcp.json`, `config.default.json`,
-  `npx imhotep-mcp init`; confirm npm name; first publish.
+  `npx imhotep-mcp init`; confirm npm name; first publish. **Resolve the §6.1 auth-model open
+  question** (CLI-token extraction vs. connected-app OAuth) before first publish; also revisit npm
+  dependency-audit hygiene (dev-tooling vulns noted in Increment 1).
 - **v1.1 (fast-follow).** Read depth (`get_story` `tests`/`metadata_changes`/`tasks` includes);
   standalone read tools (`list_metadata_components`, `list_metadata_changes`, `get_story_tests`);
   Story-related writes (`log_metadata_change`, `create_test_scenario`, `record_test_result`) +
@@ -840,7 +881,7 @@ denormalized `Project__c` lookup + `Requested_Release__c` lookup.
 (junction: Story↔Tag), `Template__c`, `Template_Item__c`, `Imhotep_Config__mdt` (app config CMT —
 not CRUD data).
 
-**Story__c** — Name field "Title"; `Story_Number__c` auto-number (`S-NNNNNN`); record types
+**Story__c** — Name field "Title"; `Story_Number__c` auto-number (`SNNNNNN`); record types
 `Simple`/`Standard`.
 - Rich text: `Story_Description__c` (short user story), `Acceptance_Criteria_Tests__c` (DoD +
   tests), `Solution_Build_Notes__c` (implementation notes — most body content),
@@ -878,6 +919,29 @@ rollups (`Total_Points__c`, `Points_Left_to_Complete__c`, counts), formulas
 
 ## Changelog
 
+- **2026-08-02 — Increment 1 build findings (live-verified against `AcceleratorsProd`).**
+  Three findings from live testing against the managed `iab__` install in the GPS Accelerators
+  production org:
+  1. **Auth token source corrected — the §0 jsforce+bearer design stands.** The token must come
+     from **`sf org auth show-access-token`**, not `sf org display`: current `sf` versions mask
+     the token in `org display` output (returning the literal placeholder
+     `[REDACTED] Use 'sf org auth show-access-token' to view` — an identical 54-char string for
+     *every* org). Feeding that placeholder to the REST API produced `INVALID_AUTH_HEADER`, which
+     initially looked like an org/security/transport problem; root-causing it to the mask showed
+     the fix is a one-line source change. With the real token (112-char `00D…!` session id), the
+     original single-backend jsforce+bearer architecture works end-to-end — `get_story` verified
+     3/3 (number normalization, exact match, graceful miss). *(A brief dual-backend detour was
+     built while mis-diagnosing, then removed once the mask was found — no bloat shipped.)*
+     Confirmed this is **not** an API-access issue (the user's `sf data query` works throughout).
+     The masking is per the deliberate CLI security change in issue #3560; our in-process use of
+     `show-access-token` is consistent with it, and the **long-term auth model (CLI-token vs.
+     connected-app OAuth) is now a recorded decision + open question — see new §6.1.**
+  2. **Story number format is `SNNNNNN` (no dash), not `S-NNNNNN`.** The live auto-number is `S`
+     + 6 digits (`S000014`). Corrected the normalizer, tests, tool descriptions, and every plan
+     reference (§1, §5.1, §5.2, §5.5, Appendix).
+  3. **`iab__Points__c` is a formula (read-only).** Moved `points` into the shipped read-only
+     field list in `config.default.json`. All other Appendix schema (fields, Status/Story_Type
+     picklists, Simple/Standard record types) confirmed exactly correct against the live describe.
 - **2026-08-02 — Prototype decommission.** Prototype skill renamed to `imhotep-prototype`
   (parallel cross-Claude effort by the author, outside this repo), freeing the `imhotep/` slot.
   Updated the Kickoff note accordingly and added to **Increment 5**: install the shipped skill
