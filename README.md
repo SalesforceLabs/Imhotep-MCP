@@ -68,12 +68,33 @@ Writes run as your Salesforce user, so your permissions and Imhotep's validation
 System-maintained fields (auto-numbers, rollups, formulas) can't be written. You author rich text
 in Markdown; the server stores it as HTML.
 
-- _Configuration tools coming in v1 — see [Getting started](#getting-started) as they land._
+**Configure**
+
+- **`imhotep_get_config`** — show your current settings (merged, or a single scope).
+- **`imhotep_set_config`** — set a value (`defaultOrg`, `defaultProject`, `currentRelease`,
+  `autonomousMode`) at the global or project scope. Previews the change first; you confirm before
+  it's written.
+- **`imhotep_init_config`** — scaffold a documented starter config file.
+
+Set a default org and project once, and the other tools assume them — so "what's in flight" or
+"create a story titled …" just work without restating context each time.
 
 ## Configuration
 
-_(coming in v1)_ Point the server at the org where Imhotep is installed and tailor its defaults —
-set once globally, or per project. Details will be documented here as configuration lands.
+Point the server at the org where Imhotep is installed and tailor its defaults. Configuration is
+optional — the server runs on sensible baked-in defaults — but setting a default org and project
+makes everyday requests context-free.
+
+Settings live in an `imhotep.config.json` at either scope, most-specific winning:
+
+- **Global** — `~/.imhotep/config.json`, inherited by every project (the common case).
+- **Project** — `./imhotep.config.json` in a repo, overriding the global for that project.
+
+You don't hand-edit these unless you want to: `imhotep_init_config` scaffolds a documented
+starter, and `imhotep_set_config` sets values for you (previewing first). Common keys:
+`defaultOrg`, `defaultProject`, `currentRelease`, `autonomousMode`.
+
+_(Detailed key reference and `npx imhotep-mcp init` coming in v1.)_
 
 ## Development
 

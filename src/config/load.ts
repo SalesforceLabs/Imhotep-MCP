@@ -123,3 +123,25 @@ export function loadConfig(options: { cwd?: string; env?: NodeJS.ProcessEnv } = 
     sources: { default: defaultPath, global: globalPath, project: projectPath },
   };
 }
+
+/**
+ * Read the RAW (unmerged) config for a single scope, for `get_config(scope)`. Returns the parsed
+ * object and the resolved path (or null path + {} when no file exists at that scope).
+ */
+export function readScopeConfig(
+  scope: 'default' | 'global' | 'project',
+  options: { cwd?: string; env?: NodeJS.ProcessEnv } = {},
+): { path: string | null; config: Partial<ImhotepConfig> } {
+  const env = options.env ?? process.env;
+  if (scope === 'default') {
+    const path = shippedDefaultPath();
+    return { path, config: readConfigFile(path) };
+  }
+  if (scope === 'global') {
+    const path = resolveGlobalConfigPath(env);
+    return { path, config: path ? readConfigFile(path) : {} };
+  }
+  const projPath = projectConfigPath(options.cwd ?? process.cwd());
+  const path = existsSync(projPath) ? projPath : null;
+  return { path, config: path ? readConfigFile(path) : {} };
+}

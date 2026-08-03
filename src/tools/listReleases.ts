@@ -14,12 +14,17 @@ import { nsApiName } from '../util/namespace.js';
 import { selectClause, selectFields, shapeRecord, soqlEscape } from '../salesforce/query.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
+import { contextProjectRef } from '../salesforce/context.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const listReleasesInputShape = {
   project: z
     .string()
-    .describe('The Project whose Releases to list: name fragment, Id, or record URL.'),
+    .optional()
+    .describe(
+      'The Project whose Releases to list: name fragment, Id, or record URL. ' +
+        'Defaults to the configured defaultProject when omitted.',
+    ),
   status: z.enum(['Planning', 'Active', 'Accepted']).optional().describe('Optional status filter.'),
   is_backlog: z
     .boolean()
@@ -56,8 +61,13 @@ export async function listReleases(
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {
+      // Fall back to the configured working-context project when omitted (§5.5).
+      const projectRef = contextProjectRef(input.project, config);
+      if (!projectRef) {
+        return { note: 'No Project given and no defaultProject configured. Name a project, or set defaultProject via set_config.' };
+      }
       // Resolve the Project to exactly one record first.
-      const resolved = await resolveOne(conn, projectObj, input.project, { org: input.org });
+      const resolved = await resolveOne(conn, projectObj, projectRef, { org: input.org });
       if (!resolved.record) {
         return {
           projectCandidates: resolved.candidates ?? [],

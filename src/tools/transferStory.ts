@@ -14,6 +14,7 @@ import type { ImhotepConfig } from '../config/schema.js';
 import { nsApiName } from '../util/namespace.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
+import { resolveOneInProject } from '../salesforce/context.js';
 import { verifyAfterWrite, autonomousNote, type SaveResult } from '../salesforce/write.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
@@ -57,9 +58,13 @@ export async function transferStory(
         return { storyCandidates: story.candidates ?? [], note: story.note ?? 'Could not resolve the Story.' };
       }
       const storyId = story.record.id as string;
+      const storyProjectId = (story.record.project as string | null) ?? null;
 
-      // Resolve the destination Release and derive its Project.
-      const rel = await resolveOne(conn, releaseObj, input.to_release, { org: input.org });
+      // Resolve the destination Release, scoped to the Story's Project so a bare name like
+      // "Backlog" resolves unambiguously (every Project has one). Id/URL still short-circuit.
+      const rel = await resolveOneInProject(conn, releaseObj, input.to_release, storyProjectId, {
+        org: input.org,
+      });
       if (!rel.record) {
         return { releaseCandidates: rel.candidates ?? [], note: rel.note ?? 'Could not resolve the destination Release.' };
       }

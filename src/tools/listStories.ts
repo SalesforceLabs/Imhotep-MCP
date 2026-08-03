@@ -14,6 +14,7 @@ import { nsApiName } from '../util/namespace.js';
 import { selectFields, shapeRecord, soqlEscape } from '../salesforce/query.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
+import { contextProjectRef, contextReleaseRef, resolveOneInProject } from '../salesforce/context.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const listStoriesInputShape = {
@@ -69,16 +70,24 @@ export async function listStories(
     return await withConnection(input.org, config.apiVersion, async (conn) => {
       const where: string[] = [];
 
-      // Resolve reference-style filters to Ids first.
-      if (input.release) {
-        const r = await resolveOne(conn, releaseObj, input.release, { org: input.org });
+      // Working context (§5.5): fall back to configured project/release when omitted.
+      const projectRef = contextProjectRef(input.project, config);
+      const releaseRef = contextReleaseRef(input.release, config);
+
+      // Resolve the Project first (for filtering AND to scope release/parent name resolution).
+      let projectId: string | null = null;
+      if (projectRef) {
+        const r = await resolveOne(conn, projectObj, projectRef, { org: input.org });
+        if (!r.record) return { note: r.note ?? 'Could not resolve the Project filter.' };
+        projectId = r.record.id as string;
+        where.push(`${nsApiName(f.project ?? 'Project__c')} = '${soqlEscape(projectId)}'`);
+      }
+      if (releaseRef) {
+        const r = await resolveOneInProject(conn, releaseObj, releaseRef, projectId, {
+          org: input.org,
+        });
         if (!r.record) return { note: r.note ?? 'Could not resolve the Release filter.' };
         where.push(`${nsApiName(f.release ?? 'Release__c')} = '${soqlEscape(r.record.id as string)}'`);
-      }
-      if (input.project) {
-        const r = await resolveOne(conn, projectObj, input.project, { org: input.org });
-        if (!r.record) return { note: r.note ?? 'Could not resolve the Project filter.' };
-        where.push(`${nsApiName(f.project ?? 'Project__c')} = '${soqlEscape(r.record.id as string)}'`);
       }
       if (input.parent_story) {
         const r = await resolveOne(conn, storyObj, input.parent_story, {

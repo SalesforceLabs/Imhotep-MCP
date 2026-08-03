@@ -28,6 +28,9 @@ import { createStory, createStoryInputShape } from './tools/createStory.js';
 import { updateStory, updateStoryInputShape } from './tools/updateStory.js';
 import { transferStory, transferStoryInputShape } from './tools/transferStory.js';
 import { updateRelease, updateReleaseInputShape } from './tools/updateRelease.js';
+import { getConfig, getConfigInputShape } from './tools/getConfig.js';
+import { setConfig, setConfigInputShape } from './tools/setConfig.js';
+import { initConfig, initConfigInputShape } from './tools/initConfig.js';
 
 /** Package version, kept in sync with package.json manually (bumped at release). */
 const SERVER_VERSION = '0.1.0';
@@ -47,14 +50,16 @@ function printBanner(
 }
 
 async function main(): Promise<void> {
-  const { config, sources } = loadConfig();
-  printBanner(config.apiVersion, sources);
+  const startup = loadConfig();
+  printBanner(startup.config.apiVersion, startup.sources);
 
   const server = new McpServer({ name: 'imhotep-mcp', version: SERVER_VERSION });
 
   /**
    * Register a tool: wrap its handler with uniform structured-output + error handling.
    * `handler` takes the validated args + the effective config and returns a plain result object.
+   * Config is reloaded FRESH per invocation (files are tiny, local) so every call sees current
+   * settings — including a `set_config` change or hand-edit made earlier in the same session.
    */
   function tool<Shape extends ZodRawShape>(
     name: string,
@@ -65,6 +70,12 @@ async function main(): Promise<void> {
   ): void {
     const callback = async (args: Record<string, unknown>): Promise<CallToolResult> => {
       try {
+        const config = loadConfig().config;
+        // Apply org-resolution precedence centrally (§5.5): per-call `org` → config defaultOrg →
+        // CLI default. Tools then just read args.org and never see the config-fallback plumbing.
+        if ((args.org === undefined || args.org === '') && config.defaultOrg) {
+          args = { ...args, org: config.defaultOrg };
+        }
         const result = await handler(args, config);
         return {
           content: [{ type: 'text', text: JSON.stringify(result, null, 2) }],
@@ -190,6 +201,38 @@ async function main(): Promise<void> {
       'get user approval before calling.',
     updateReleaseInputShape,
     (args, config) => updateRelease(args as never, config),
+  );
+
+  // --- Config-management tools (§5.2, §7). The SERVER performs the file I/O; the agent just
+  // calls a verb, needing no filesystem access to ~/.imhotep. ---
+
+  tool(
+    'imhotep_get_config',
+    'Get Imhotep config',
+    'Show current Imhotep MCP settings: the merged effective config (default → global → project) ' +
+      'or a single scope\'s raw contents ("default", "global", "project"). Read-only.',
+    getConfigInputShape,
+    async (args) => getConfig(args as never),
+  );
+
+  tool(
+    'imhotep_set_config',
+    'Set an Imhotep config value',
+    'Change a setting (defaultOrg, defaultProject, currentRelease, autonomousMode) at the global ' +
+      'or project scope. Two-step: called without confirm=true it validates the value (resolving ' +
+      'the org/project/release live) and returns a preview WITHOUT writing; call again with ' +
+      'confirm=true to commit. Preview the change and get user approval before confirming.',
+    setConfigInputShape,
+    (args, config) => setConfig(args as never, config),
+  );
+
+  tool(
+    'imhotep_init_config',
+    'Initialize an Imhotep config file',
+    'Scaffold a documented, commented starter imhotep.config.json at the "project" or "global" ' +
+      'scope. No-clobber: refuses to overwrite an existing file.',
+    initConfigInputShape,
+    async (args) => initConfig(args as never),
   );
 
   const transport = new StdioServerTransport();

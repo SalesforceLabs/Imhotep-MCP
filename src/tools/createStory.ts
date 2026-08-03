@@ -16,6 +16,7 @@ import { nsApiName } from '../util/namespace.js';
 import { htmlToMarkdown } from '../util/richtext.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
+import { contextReleaseRef } from '../salesforce/context.js';
 import {
   buildWritePayload,
   validatePicklist,
@@ -27,7 +28,13 @@ import {
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const createStoryInputShape = {
-  release: z.string().min(1).describe('The Release to create the Story under (name, Id, or URL). Required.'),
+  release: z
+    .string()
+    .optional()
+    .describe(
+      'The Release to create the Story under (name, Id, or URL). ' +
+        'Defaults to the configured currentRelease when omitted.',
+    ),
   title: z.string().min(1).describe('The Story title (the Name field).'),
   description: z.string().optional().describe('Short user story (Markdown).'),
   acceptance_criteria: z.string().optional().describe('Acceptance criteria / DoD + tests (Markdown).'),
@@ -74,8 +81,13 @@ export async function createStory(
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {
+      // Working context (§5.5): fall back to configured currentRelease when omitted.
+      const releaseRef = contextReleaseRef(input.release, config);
+      if (!releaseRef) {
+        return { note: 'No Release given and no currentRelease configured. Name a release, or set currentRelease via set_config.' };
+      }
       // Resolve the Release, then DERIVE Project from it (avoids the validation trap).
-      const rel = await resolveOne(conn, releaseObj, input.release, { org: input.org });
+      const rel = await resolveOne(conn, releaseObj, releaseRef, { org: input.org });
       if (!rel.record) {
         return { releaseCandidates: rel.candidates ?? [], note: rel.note ?? 'Could not resolve the Release.' };
       }
