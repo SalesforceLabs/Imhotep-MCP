@@ -1,6 +1,6 @@
 {
   "name": "imhotep-mcp",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "MCP server for Imhotep App Builder — work with Imhotep Projects, Releases, and Stories from any MCP client, as the authenticated Salesforce user.",
   "type": "module",
   "bin": {

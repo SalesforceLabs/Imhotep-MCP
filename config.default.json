@@ -1,7 +1,7 @@
 {
   "$comment": "Imhotep MCP — shipped default configuration (the canonical managed-package schema). This file is bundled inside the package and REPLACED on every update. Customers NEVER edit it; they override in ~/.imhotep/config.json (global) or ./imhotep.config.json (project), which are deep-merged over these defaults. See plan §7. Field API names are given WITHOUT the namespace; the server prepends the fixed 'iab__' prefix at runtime (plan §5.5). NOTE: the namespace is hard-coded in the server (src/util/namespace.ts), NOT a config key (plan §7.4).",
 
-  "apiVersion": "62.0",
+  "apiVersion": "67.0",
 
   "objects": {
     "project": {

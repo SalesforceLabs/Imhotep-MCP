@@ -10,6 +10,9 @@
                 Projects, Releases, Stories, plus search.
 *******************************************************************************************/
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
@@ -32,8 +35,20 @@ import { getConfig, getConfigInputShape } from './tools/getConfig.js';
 import { setConfig, setConfigInputShape } from './tools/setConfig.js';
 import { initConfig, initConfigInputShape } from './tools/initConfig.js';
 
-/** Package version, kept in sync with package.json manually (bumped at release). */
-const SERVER_VERSION = '0.1.0';
+/** The server version, read from the package's own package.json (single source of truth). */
+function readServerVersion(): string {
+  try {
+    // dist/server.js → package root is one level up.
+    const here = dirname(fileURLToPath(import.meta.url));
+    const pkg = JSON.parse(readFileSync(join(here, '..', 'package.json'), 'utf8')) as {
+      version?: string;
+    };
+    return pkg.version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
+}
+const SERVER_VERSION = readServerVersion();
 
 /** A themed one-line startup banner on stderr — humans see it, the model doesn't (§8.1). */
 function printBanner(
@@ -50,6 +65,15 @@ function printBanner(
 }
 
 async function main(): Promise<void> {
+  // CLI subcommands (e.g. `npx imhotep-mcp init`) run instead of starting the MCP server.
+  // The default (no subcommand) is the stdio MCP server an MCP client launches.
+  const subcommand = process.argv[2];
+  if (subcommand === 'init') {
+    const { runInit } = await import('./cli/init.js');
+    runInit(process.argv.slice(3));
+    return;
+  }
+
   const startup = loadConfig();
   printBanner(startup.config.apiVersion, startup.sources);
 

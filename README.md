@@ -1,7 +1,7 @@
 # Imhotep MCP Server
 
-> **Status:** In active development toward v1. Capabilities marked _(coming in v1)_ below are on
-> the way; this README will fill in as they land.
+> **Status:** v1, pre-release. The full v1 toolset is built and working; a public release (GitHub +
+> npm) follows once the project completes its open-source review.
 
 > _Laying the foundation stones…_
 
@@ -18,7 +18,8 @@ The server targets the **managed** Imhotep package (namespace `iab__`), and ship
 ## Prerequisites
 
 1. **[Imhotep App Builder](https://appexchange.salesforce.com/appxListingDetail?listingId=653308da-f440-4d28-8b6a-b7ed2a1394b3&tab=e)**
-   (managed package) installed in the Salesforce org where your Projects/Releases/Stories live.
+   (managed package, **v2.0.0 or later**) installed in the Salesforce org where your
+   Projects/Releases/Stories live.
 2. **[Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) (`sf`)** installed and
    authenticated to that org — this is how the server authenticates and how your permissions are
    enforced.
@@ -27,7 +28,39 @@ The server targets the **managed** Imhotep package (namespace `iab__`), and ship
 
 ## Getting started
 
-_(Installation and MCP-client setup instructions coming in v1.)_
+Once the project is publicly released, the simplest path will be zero-install via npm — register
+the server with your MCP client and it fetches on demand:
+
+```jsonc
+// .mcp.json
+{ "mcpServers": { "imhotep": { "command": "npx", "args": ["-y", "imhotep-mcp@1"] } } }
+```
+
+Until then (and any time you prefer to run from source), install from the repository:
+
+```bash
+git clone <repo-url> imhotep-mcp
+cd imhotep-mcp
+npm install
+npm run build
+```
+
+Then point your MCP client at the built server:
+
+```jsonc
+// .mcp.json
+{ "mcpServers": { "imhotep": { "command": "node", "args": ["/absolute/path/to/imhotep-mcp/dist/server.js"] } } }
+```
+
+Finally, scaffold your configuration and install the skill:
+
+```bash
+npx imhotep-mcp init          # or: node dist/server.js init
+```
+
+`init` writes a documented starter `imhotep.config.json` and installs the skill into
+`~/.claude/skills/imhotep/` (both no-clobber — safe to re-run). Then set your org, e.g. by asking
+Claude to run `imhotep_set_config defaultOrg <your-sf-org-alias>`.
 
 ## Tools
 
@@ -90,11 +123,13 @@ Settings live in an `imhotep.config.json` at either scope, most-specific winning
 - **Global** — `~/.imhotep/config.json`, inherited by every project (the common case).
 - **Project** — `./imhotep.config.json` in a repo, overriding the global for that project.
 
-You don't hand-edit these unless you want to: `imhotep_init_config` scaffolds a documented
-starter, and `imhotep_set_config` sets values for you (previewing first). Common keys:
-`defaultOrg`, `defaultProject`, `currentRelease`, `autonomousMode`.
+You don't hand-edit these unless you want to: `npx imhotep-mcp init` (or the `imhotep_init_config`
+tool) scaffolds a documented starter, and `imhotep_set_config` sets values for you (previewing
+first). Common keys: `defaultOrg`, `defaultProject`, `currentRelease`, `autonomousMode`.
 
-_(Detailed key reference and `npx imhotep-mcp init` coming in v1.)_
+Behavioral guidance ("we skip the Testing status", "tag every Defect with 'triage'") belongs in
+your project's `CLAUDE.md` or memories, not in `imhotep.config.json` — config is for structure the
+server parses; `CLAUDE.md` is for guidance the model interprets.
 
 ## The skill
 
@@ -104,8 +139,15 @@ semantics (what belongs in Description vs. Solution Build Notes vs. Deployment C
 confirm-before-write discipline, and where to put your own customizations. It contains no queries or
 API recipes — those are the server's job.
 
-_(Automatic skill installation via `npx imhotep-mcp init` coming in v1; for now the skill lives in
-the repo.)_
+`npx imhotep-mcp init` installs the skill for you; you can also copy `skill/SKILL.md` into
+`~/.claude/skills/imhotep/` by hand.
+
+## Compatibility & versioning
+
+The server is versioned on its **own** semantic-version line (starting at **1.0.0**), independent
+of the Imhotep App Builder managed package. This release targets **Imhotep App Builder v2.0.0+**.
+Breaking changes are gated behind a new major version you opt into (pinning `imhotep-mcp@1` keeps
+you on compatible minor/patch updates).
 
 ## Development
 
@@ -118,16 +160,21 @@ npm run lint       # lint
 npm run format     # format with Prettier
 ```
 
+Maintainers: see [PUBLISHING.md](PUBLISHING.md) for the release runbook (publishing is gated on
+open-source clearance).
+
 ## Repository layout
 
 ```
 src/            server source
-  config/       config loading + deep-merge (defaults -> global -> project)
-  salesforce/   sf-CLI auth + Salesforce API access
+  cli/          CLI subcommands (e.g. `imhotep-mcp init`)
+  config/       config loading, deep-merge, and comment-preserving writes
+  salesforce/   sf-CLI auth, jsforce connection, queries, writes, error translation
   tools/        MCP tool definitions (one per user intent)
   util/         shared helpers (namespace, rich text, record references)
 skill/          the shipped skill (judgment layer for AI clients)
 tests/          test suite
+config.default.json   shipped managed-package schema defaults
 ```
 
 ## License
