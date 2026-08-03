@@ -48,7 +48,7 @@
         "notes": "Notes__c",
         "description": "Description__c"
       },
-      "richTextFields": ["notes", "description"],
+      "richTextFields": ["notes"],
       "picklists": {
         "status": ["Planning", "Active", "Accepted"],
         "releaseMode": ["Standard", "Simple"]
@@ -93,6 +93,7 @@
         "type": ["New", "Change", "Defect"]
       },
       "recordTypes": {
+        "$comment": "developerName list + shipped default. RecordTypeIds are org-specific, so the server resolves DeveloperName -> Id at runtime via a cached describe (NOT hard-coded here).",
         "available": ["Simple", "Standard"],
         "default": "Standard"
       },
@@ -147,7 +148,7 @@
   "readOnlyFields": {
     "$comment": "System-maintained fields the server refuses to write (plan Appendix 'Do-not-write'). Logical names per object.",
     "story": ["storyNumber", "points"],
-    "release": ["totalPoints", "pointsLeftToComplete"],
+    "release": ["totalPoints", "pointsLeftToComplete", "pointsAvailable"],
     "project": ["releaseCount", "resourceLinkCount"]
   },
 

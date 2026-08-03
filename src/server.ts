@@ -24,6 +24,10 @@ import { listProjects, listProjectsInputShape } from './tools/listProjects.js';
 import { listReleases, listReleasesInputShape } from './tools/listReleases.js';
 import { listStories, listStoriesInputShape } from './tools/listStories.js';
 import { search, searchInputShape } from './tools/search.js';
+import { createStory, createStoryInputShape } from './tools/createStory.js';
+import { updateStory, updateStoryInputShape } from './tools/updateStory.js';
+import { transferStory, transferStoryInputShape } from './tools/transferStory.js';
+import { updateRelease, updateReleaseInputShape } from './tools/updateRelease.js';
 
 /** Package version, kept in sync with package.json manually (bumped at release). */
 const SERVER_VERSION = '0.1.0';
@@ -141,6 +145,51 @@ async function main(): Promise<void> {
       'from.',
     searchInputShape,
     (args, config) => search(args as never, config),
+  );
+
+  // --- Write tools (§5.2). These modify Salesforce data; the skill enforces confirm-before-
+  // write, and the server carries the autonomousMode posture (§6). ---
+
+  tool(
+    'imhotep_create_story',
+    'Create Imhotep Story',
+    'Create a Story under a Release. The Project is derived automatically from the Release (you ' +
+      'do not pass it). Set parent_story to create a child Story. Rich-text fields (description, ' +
+      'acceptance_criteria, build_notes, deployment_checklist) are authored in Markdown. Returns ' +
+      'the new Story (with its SNNNNNN number). Preview the payload + target org and get user ' +
+      'approval before calling.',
+    createStoryInputShape,
+    (args, config) => createStory(args as never, config),
+  );
+
+  tool(
+    'imhotep_update_story',
+    'Update Imhotep Story',
+    'Update one or more writable fields on a Story, including status (e.g. "mark S-528 Ready"). ' +
+      'Rich-text fields are authored in Markdown. System-maintained fields are refused. Preview ' +
+      'the change + target org and get user approval before calling.',
+    updateStoryInputShape,
+    (args, config) => updateStory(args as never, config),
+  );
+
+  tool(
+    'imhotep_transfer_story',
+    'Transfer Imhotep Story to another Release',
+    "Move a Story to another Release. The Story's Project is kept consistent automatically " +
+      '(re-pointed to the destination Release\'s Project). "Move to backlog" = transfer to the ' +
+      'backlog Release. Preview + get user approval before calling.',
+    transferStoryInputShape,
+    (args, config) => transferStory(args as never, config),
+  );
+
+  tool(
+    'imhotep_update_release',
+    'Update Imhotep Release',
+    'Update writable Release fields (status, dates, points goal, backlog flag, description, and ' +
+      'Release Notes — Markdown → HTML). System-maintained rollup fields are refused. Preview + ' +
+      'get user approval before calling.',
+    updateReleaseInputShape,
+    (args, config) => updateRelease(args as never, config),
   );
 
   const transport = new StdioServerTransport();

@@ -53,8 +53,22 @@ respect your Salesforce permissions.
 
 Rich-text fields (Story descriptions, Release notes) are returned as Markdown.
 
-- _Write and configuration tools coming in v1 — see [Getting started](#getting-started) as they
-  land._
+**Create & update**
+
+- **`imhotep_create_story`** — create a Story under a Release; its Project is filled in
+  automatically. Set a parent to create a child story. Write rich-text fields in Markdown.
+- **`imhotep_update_story`** — change any writable field, including status (e.g. "mark S-528
+  Ready").
+- **`imhotep_transfer_story`** — move a Story to another Release (its Project stays consistent
+  automatically); "move to backlog" transfers it to the backlog Release.
+- **`imhotep_update_release`** — update Release fields, including Release Notes (written in
+  Markdown).
+
+Writes run as your Salesforce user, so your permissions and Imhotep's validation rules apply.
+System-maintained fields (auto-numbers, rollups, formulas) can't be written. You author rich text
+in Markdown; the server stores it as HTML.
+
+- _Configuration tools coming in v1 — see [Getting started](#getting-started) as they land._
 
 ## Configuration
 
