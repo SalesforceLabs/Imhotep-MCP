@@ -96,6 +96,17 @@ starter, and `imhotep_set_config` sets values for you (previewing first). Common
 
 _(Detailed key reference and `npx imhotep-mcp init` coming in v1.)_
 
+## The skill
+
+The server ships with a **skill** ([`skill/SKILL.md`](skill/SKILL.md)) — the judgment layer that
+teaches an AI client *when and how* to use the tools: which tool fits a request, Imhotep's field
+semantics (what belongs in Description vs. Solution Build Notes vs. Deployment Checklist),
+confirm-before-write discipline, and where to put your own customizations. It contains no queries or
+API recipes — those are the server's job.
+
+_(Automatic skill installation via `npx imhotep-mcp init` coming in v1; for now the skill lives in
+the repo.)_
+
 ## Development
 
 ```bash
