@@ -139,8 +139,13 @@ semantics (what belongs in Description vs. Solution Build Notes vs. Deployment C
 confirm-before-write discipline, and where to put your own customizations. It contains no queries or
 API recipes — those are the server's job.
 
-`npx imhotep-mcp init` installs the skill for you; you can also copy `skill/SKILL.md` into
-`~/.claude/skills/imhotep/` by hand.
+The server keeps the skill current for you: it installs/refreshes `~/.claude/skills/imhotep/`
+on `init` and on every server start (so updates reach you automatically). Because the shipped
+skill is overwritten to stay current, don't hand-edit it — put your own workflows in a separate
+`imhotep-custom` skill, org structure in `imhotep.config.json`, and narrative guidance in
+`CLAUDE.md`. To opt out of auto-refresh (e.g. if you manage the skill yourself), set
+`skillAutoInstall: false`. The skill is Claude-specific; in other MCP clients the tools still work
+via their descriptions, just without this guidance layer.
 
 ## Compatibility & versioning
 

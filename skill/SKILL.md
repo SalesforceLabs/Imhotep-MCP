@@ -98,11 +98,13 @@ omits them, the server falls back to configured defaults (`defaultOrg`, `default
 
 ## Shipped vs. yours (customize in the right place)
 
-> **Don't edit the Imhotep MCP package or this shipped skill — your changes are lost on update.**
-> Put **org-specific structure** (default org, custom fields, extra picklist values, record-type
-> defaults) in **`imhotep.config.json`** (global `~/.imhotep/` or per-project `./`), and
-> **narrative guidance** ("we skip the Testing status", "tag every Defect with 'triage'") in your
-> project's **`CLAUDE.md`** or memories. Config is for the machine; CLAUDE.md is for the model.
+> **Don't edit the Imhotep MCP package or this shipped skill — your changes are lost.** This skill
+> is shipped and kept current: the server refreshes it (overwrites it) on install, update, and
+> startup, so any hand-edits here are replaced. Put **org-specific structure** (default org, custom
+> fields, extra picklist values, record-type defaults) in **`imhotep.config.json`** (global
+> `~/.imhotep/` or per-project `./`), and **narrative guidance** ("we skip the Testing status", "tag
+> every Defect with 'triage'") in your project's **`CLAUDE.md`** or memories. Config is for the
+> machine; CLAUDE.md is for the model.
 
 For your own repeatable workflows on top of these tools, create a *separate* local skill (e.g.
 `imhotep-custom`) rather than editing this one.

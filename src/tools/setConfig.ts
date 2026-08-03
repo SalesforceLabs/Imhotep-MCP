@@ -25,6 +25,7 @@ const SETTABLE_KEYS = [
   'defaultProject',
   'currentRelease',
   'autonomousMode',
+  'skillAutoInstall',
 ] as const;
 type SettableKey = (typeof SETTABLE_KEYS)[number];
 
@@ -32,7 +33,7 @@ export const setConfigInputShape = {
   key: z.enum(SETTABLE_KEYS).describe('The setting to change.'),
   value: z
     .union([z.string(), z.boolean()])
-    .describe('The new value (boolean for autonomousMode; string otherwise).'),
+    .describe('The new value (boolean for autonomousMode/skillAutoInstall; string otherwise).'),
   scope: z.enum(['global', 'project']).describe('Where to write: "global" (~/.imhotep) or "project" (./).'),
   confirm: z
     .boolean()
@@ -95,9 +96,9 @@ async function validateValue(
   raw: string | boolean,
   config: ImhotepConfig,
 ): Promise<string | boolean> {
-  if (key === 'autonomousMode') {
+  if (key === 'autonomousMode' || key === 'skillAutoInstall') {
     if (typeof raw !== 'boolean') {
-      throw new ImhotepError('autonomousMode must be a boolean (true/false).');
+      throw new ImhotepError(`${key} must be a boolean (true/false).`);
     }
     return raw;
   }

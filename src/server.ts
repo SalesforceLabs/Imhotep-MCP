@@ -20,6 +20,7 @@ import type { ZodRawShape } from 'zod';
 import { loadConfig } from './config/load.js';
 import type { ImhotepConfig } from './config/schema.js';
 import { ImhotepError } from './salesforce/errors.js';
+import { ensureSkillInstalled, reportSkillInstall } from './skill/install.js';
 import { getStory, getStoryInputShape } from './tools/getStory.js';
 import { getProject, getProjectInputShape } from './tools/getProject.js';
 import { getRelease, getReleaseInputShape } from './tools/getRelease.js';
@@ -76,6 +77,11 @@ async function main(): Promise<void> {
 
   const startup = loadConfig();
   printBanner(startup.config.apiVersion, startup.sources);
+
+  // Ensure the shipped skill is present/current (§4.3). Best-effort: this NEVER gates the server —
+  // the tools work in any MCP client without the skill; a write failure only warns on stderr
+  // (louder when no skill exists at all). Honors config `skillAutoInstall` (default true).
+  reportSkillInstall(ensureSkillInstalled(startup.config.skillAutoInstall ?? true));
 
   const server = new McpServer({ name: 'imhotep-mcp', version: SERVER_VERSION });
 

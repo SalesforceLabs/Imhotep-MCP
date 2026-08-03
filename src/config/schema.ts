@@ -73,6 +73,8 @@ export interface ImhotepConfig {
   defaultOrg?: string;
   /** When true, permits unattended writes (default OFF; §6). */
   autonomousMode?: boolean;
+  /** When true (default), the server auto-installs/refreshes the shipped skill on start (§4.3). */
+  skillAutoInstall?: boolean;
   /** Default working-context project (name, Id, or URL). */
   defaultProject?: string;
   /** Current working-context release (name, Id, or URL). */
