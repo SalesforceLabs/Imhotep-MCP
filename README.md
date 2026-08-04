@@ -28,15 +28,32 @@ The server targets the **managed** Imhotep package (namespace `iab__`), and ship
 
 ## Getting started
 
-Once the project is publicly released, the simplest path will be zero-install via npm — register
-the server with your MCP client and it fetches on demand:
+There are two ways to install the server. Both end the same way — run `init` once, then set your
+org — and both leave you with a working `.mcp.json` your client launches on demand.
+
+- **Option A — npx (zero-install).** The simplest path: no clone, no build; your client fetches the
+  published package on demand. _Available once the project is publicly released._
+- **Option B — install from source (clone & build).** Clone the repo, build it, and point your
+  client at the built server. _Available now_ — and always available for anyone who prefers to run
+  from source.
+
+Pick one, follow its subsection, then do **Finish setup** at the end.
+
+### Option A — npx (zero-install)
+
+> _Available after public release._ Until then, use Option B.
+
+Register the server with your MCP client — it fetches the package on demand, no local copy to
+maintain:
 
 ```jsonc
 // .mcp.json
 { "mcpServers": { "imhotep": { "command": "npx", "args": ["-y", "imhotep-mcp@1"] } } }
 ```
 
-Until then (and any time you prefer to run from source), install from the repository:
+### Option B — install from source (clone & build)
+
+Clone and build:
 
 ```bash
 git clone <repo-url> imhotep-mcp
@@ -45,22 +62,68 @@ npm install
 npm run build
 ```
 
-Then point your MCP client at the built server:
+Then point your MCP client at the built server (use the absolute path to `dist/server.js`):
 
 ```jsonc
 // .mcp.json
 { "mcpServers": { "imhotep": { "command": "node", "args": ["/absolute/path/to/imhotep-mcp/dist/server.js"] } } }
 ```
 
-Finally, scaffold your configuration and install the skill:
+### Finish setup (both options)
+
+Scaffold your configuration and install the skill:
 
 ```bash
-npx imhotep-mcp init          # or: node dist/server.js init
+npx imhotep-mcp init          # Option A
+node dist/server.js init      # Option B (from the repo directory)
 ```
 
 `init` writes a documented starter `imhotep.config.json` and installs the skill into
 `~/.claude/skills/imhotep/` (both no-clobber — safe to re-run). Then set your org, e.g. by asking
 Claude to run `imhotep_set_config defaultOrg <your-sf-org-alias>`.
+
+## Updating
+
+Keeping current depends on which install option you used:
+
+- **Option A (npx).** Pinning `imhotep-mcp@1` means your client auto-fetches the latest compatible
+  **1.x** release each time it starts — usually there's nothing to do. To force a refresh, clear the
+  npx cache (`npx clear-npx-cache`) or restart your client. Pin an exact version
+  (`imhotep-mcp@1.2.3`) if you'd rather freeze it.
+- **Option B (from source).** Pull and rebuild:
+
+  ```bash
+  cd imhotep-mcp
+  git pull
+  npm install
+  npm run build
+  ```
+
+  Then restart your MCP client so it relaunches the server.
+
+Either way, **the skill updates itself** — the server refreshes `~/.claude/skills/imhotep/` on every
+start, so a newer server brings a newer skill automatically (unless you set `skillAutoInstall:
+false`). Your `imhotep.config.json` is never touched by an update. Breaking changes only arrive in a
+new major version (`@2`) you opt into; see [Compatibility & versioning](#compatibility--versioning).
+
+## Uninstalling
+
+Remove the pieces in any order:
+
+1. **Unregister the server** — delete the `imhotep` entry from your `.mcp.json` (and restart the
+   client).
+2. **Remove the skill** — `rm -rf ~/.claude/skills/imhotep/`.
+3. **Remove your config** _(optional)_ — `rm -rf ~/.imhotep/` deletes your saved settings
+   (`defaultOrg`, `defaultProject`, …). Skip this to keep them for a later reinstall.
+4. **Remove the code:**
+   - **Option A (npx):** nothing is installed globally — npx runs from a cache, so there's nothing
+     to uninstall. (If you ever ran `npm install -g imhotep-mcp`, remove it with
+     `npm uninstall -g imhotep-mcp`.)
+   - **Option B (from source):** delete the cloned directory (`rm -rf /path/to/imhotep-mcp`).
+
+> **Beta testers:** you installed from a pre-release repository. To move to the supported release
+> later, uninstall as above (steps 1, 2, 4 — you can keep `~/.imhotep/` in step 3), then reinstall
+> from the public repository using **Option A**.
 
 ## Tools
 
