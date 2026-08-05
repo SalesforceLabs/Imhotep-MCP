@@ -56,7 +56,7 @@ maintain:
 Clone and build:
 
 ```bash
-git clone <repo-url> imhotep-mcp
+git clone https://github.com/SFDC-Assets-emu/Imhotep-MCP.git imhotep-mcp
 cd imhotep-mcp
 npm install
 npm run build
