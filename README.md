@@ -28,14 +28,14 @@ The server targets the **managed** Imhotep package (namespace `iab__`), and ship
 
 ## Getting started
 
-There are two ways to install the server. Both end the same way — register it with your MCP client,
-run `init` once, then set your org.
+There are two ways to install the server. Both end the same way — register it with Claude Code,
+run `init` once, then set your org. (Instructions below are for **Claude Code**; the tools also
+work in other MCP clients via their own server-registration mechanism.)
 
-- **Option A — npx (zero-install).** The simplest path: no clone, no build; your client fetches the
+- **Option A — npx (zero-install).** The simplest path: no clone, no build; Claude Code fetches the
   published package on demand. _Available once the project is publicly released._
-- **Option B — install from source (clone & build).** Clone the repo, build it, and point your
-  client at the built server. _Available now_ — and always available for anyone who prefers to run
-  from source.
+- **Option B — install from source (clone & build).** Clone the repo, build it, and register the
+  built server. _Available now_ — and always available for anyone who prefers to run from source.
 
 Pick one, follow its subsection, then do **Finish setup** at the end.
 
@@ -43,22 +43,29 @@ Pick one, follow its subsection, then do **Finish setup** at the end.
 
 > _Available after public release._ Until then, use Option B.
 
-Register the server with your MCP client so it fetches the package on demand — no local copy to
-maintain. Add this to your client's MCP config:
+Register the server with Claude Code so it fetches the package on demand — no local copy to
+maintain:
+
+```bash
+claude mcp add imhotep -s user -- npx -y imhotep-mcp@1
+```
+
+`-s user` installs it for **all** your projects (recommended). To scope it to just the current
+project instead, drop `-s user`.
+
+<details>
+<summary>Manual alternative (edit <code>.mcp.json</code> yourself)</summary>
+
+Instead of the command above, add this `mcpServers` entry to your Claude Code config — `~/.claude.json`
+for all projects, or a `.mcp.json` in a project root to scope it to that project:
 
 ```jsonc
 { "mcpServers": { "imhotep": { "command": "npx", "args": ["-y", "imhotep-mcp@1"] } } }
 ```
+</details>
 
-**Where this config goes:**
-- **Claude Code** — a file named `.mcp.json` in the root of the project you want to use Imhotep
-  from (create it if it doesn't exist). Or run `claude mcp add` and follow the prompts.
-- **Claude Desktop** — the `mcpServers` block of `claude_desktop_config.json` (macOS:
-  `~/Library/Application Support/Claude/claude_desktop_config.json`; open via Settings → Developer →
-  Edit Config).
-- **Other clients** — wherever that client reads its MCP server list.
-
-Then **restart / reload the client** so it launches the server.
+Either way (command or manual JSON), **restart / reload Claude Code** afterward so it launches the
+server.
 
 ### Option B — install from source (clone & build)
 
@@ -72,21 +79,32 @@ npm install
 npm run build
 ```
 
-Then register the built server with your MCP client. Add this to your client's MCP config,
-replacing the path with the **absolute path** to the `dist/server.js` you just built (run `pwd`
-in the repo to get it — e.g. `/Users/you/dev/imhotep-mcp/dist/server.js`):
+Then register the built server with Claude Code. Run this from **inside the cloned repo** — the
+`$(pwd)` fills in the absolute path to what you just built (or replace it with the full path to
+`dist/server.js`):
+
+```bash
+claude mcp add imhotep -s user -- node "$(pwd)/dist/server.js"
+```
+
+`-s user` installs it for **all** your projects (recommended). To scope it to just the current
+project instead, drop `-s user`.
+
+<details>
+<summary>Manual alternative (edit <code>.mcp.json</code> yourself)</summary>
+
+Instead of the command above, add this `mcpServers` entry to your Claude Code config — `~/.claude.json`
+for all projects, or a `.mcp.json` in a project root to scope it to that project. Replace the path
+with the **absolute path** to the `dist/server.js` you just built (`pwd` in the repo prints it —
+e.g. `/Users/you/dev/imhotep-mcp/dist/server.js`):
 
 ```jsonc
 { "mcpServers": { "imhotep": { "command": "node", "args": ["/absolute/path/to/imhotep-mcp/dist/server.js"] } } }
 ```
+</details>
 
-**Where this config goes** (same as Option A):
-- **Claude Code** — a `.mcp.json` file in the root of the project you want to use Imhotep from.
-- **Claude Desktop** — the `mcpServers` block of `claude_desktop_config.json` (macOS:
-  `~/Library/Application Support/Claude/claude_desktop_config.json`).
-- **Other clients** — wherever that client reads its MCP server list.
-
-Then **restart / reload the client** so it launches the server.
+Either way (command or manual JSON), **restart / reload Claude Code** afterward so it launches the
+server.
 
 ### Finish setup (both options)
 
