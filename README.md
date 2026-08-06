@@ -44,7 +44,7 @@ Pick one, follow its subsection, then do **Finish setup** at the end.
 > _Available after public release._ Until then, use Option B.
 
 Register the server with Claude Code so it fetches the package on demand — no local copy to
-maintain:
+maintain. **From your terminal, run this from any directory:**
 
 ```bash
 claude mcp add imhotep -s user -- npx -y imhotep-mcp@1
@@ -69,8 +69,8 @@ server.
 
 ### Option B — install from source (clone & build)
 
-Clone and build (do this from wherever you keep code — e.g. `~/dev`; the path you choose is the
-`/absolute/path/to/imhotep-mcp` referenced below):
+**From your terminal, run this from wherever you keep code** (e.g. `~/dev`) — it clones into an
+`imhotep-mcp` subfolder there, then the `cd` moves you into it for the build:
 
 ```bash
 git clone https://github.com/SFDC-Assets-emu/Imhotep-MCP.git imhotep-mcp
@@ -79,9 +79,9 @@ npm install
 npm run build
 ```
 
-Then register the built server with Claude Code. Run this from **inside the cloned repo** — the
-`$(pwd)` fills in the absolute path to what you just built (or replace it with the full path to
-`dist/server.js`):
+Then register the built server with Claude Code. **Run this from inside that same `imhotep-mcp`
+folder** (you're already there from the `cd` above) — the `$(pwd)` fills in the absolute path to
+what you just built (or replace it with the full path to `dist/server.js`):
 
 ```bash
 claude mcp add imhotep -s user -- node "$(pwd)/dist/server.js"
@@ -108,16 +108,19 @@ server.
 
 ### Finish setup (both options)
 
-Scaffold your configuration and install the skill:
+Scaffold your configuration and install the skill. **From your terminal, run the line for the
+option you chose:**
 
 ```bash
-npx imhotep-mcp init          # Option A
-node dist/server.js init      # Option B (from the repo directory)
+npx imhotep-mcp init --global        # Option A — from any directory
+node dist/server.js init --global    # Option B — from inside the imhotep-mcp folder
 ```
 
-`init` writes a documented starter `imhotep.config.json` and installs the skill into
-`~/.claude/skills/imhotep/` (both no-clobber — safe to re-run). Then set your org, e.g. by asking
-Claude to run `imhotep_set_config defaultOrg <your-sf-org-alias>`.
+`init` writes a documented starter config and installs the skill into `~/.claude/skills/imhotep/`
+(both no-clobber — safe to re-run). `--global` puts the config at `~/.imhotep/config.json` (shared
+by all your projects); omit it to scaffold a project-local `./imhotep.config.json` in the current
+directory instead. Then set your org, e.g. by asking Claude to run
+`imhotep_set_config defaultOrg <your-sf-org-alias>`.
 
 ## Updating
 
