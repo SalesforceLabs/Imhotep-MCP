@@ -62,8 +62,8 @@ export function runInit(args: string[]): void {
 
   out('');
   out('Next steps (in Claude, with the server already registered):');
-  out('  1. Set your org:       ask Claude to run imhotep_set_config defaultOrg <your-sf-org-alias>');
-  out('  2. (Optional) project: imhotep_set_config defaultProject "<your project>"');
+  out('  1. Set your org:       ask Claude to run imhotep_set_config defaultImhotepOrg <your-sf-org-alias>');
+  out('  2. (Optional) project: imhotep_set_config defaultImhotepProject "<your project>"');
   out('  3. Try it:             ask Claude to open a Story, e.g. "show me S000013"');
   out('');
   out('Safe to re-run: your config is never overwritten; the shipped skill is refreshed to the');

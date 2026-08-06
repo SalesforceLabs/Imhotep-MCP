@@ -48,11 +48,36 @@ export function buildWritePayload(
       throw new ImhotepError(`Unknown field "${logical}" on ${obj.apiName}.`);
     }
 
+    // Enforce configured field rules (e.g. maxLength) before any API call (sub-inc 7a).
+    validateFieldLength(obj, logical, rawValue);
+
     const value = richText.has(logical) ? markdownToHtml(rawValue as string | null) : rawValue;
     payload[nsApiName(api)] = value;
   }
 
   return payload;
+}
+
+/**
+ * Enforce a configured `fieldRules` constraint for one logical field, throwing a clear
+ * ImhotepError the model can act on. Currently checks `maxLength` (character count) on string
+ * values; non-strings and rule-less fields pass through. Runs for EVERY write tool because it
+ * lives in the single `buildWritePayload` choke point (Story, Release, and any future object).
+ *
+ * Length is measured on the raw value the caller supplied. For rich-text fields that's the
+ * Markdown source (the stored HTML is longer) — acceptable because those limits are very large
+ * (131072); the field that actually bites, Name/Title at 80, is plain text where raw === stored.
+ */
+export function validateFieldLength(obj: ObjectConfig, logical: string, value: unknown): void {
+  const rule = obj.fieldRules?.[logical];
+  if (!rule || rule.maxLength === undefined) return;
+  if (typeof value !== 'string') return;
+  if (value.length > rule.maxLength) {
+    throw new ImhotepError(
+      `The "${logical}" field on ${obj.apiName} is ${value.length} characters; the maximum is ` +
+        `${rule.maxLength}. Shorten it and try again.`,
+    );
+  }
 }
 
 /** The shape of a single-record jsforce create/update result (success + id or errors). */

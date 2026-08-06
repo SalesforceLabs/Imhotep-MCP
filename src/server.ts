@@ -101,10 +101,10 @@ async function main(): Promise<void> {
     const callback = async (args: Record<string, unknown>): Promise<CallToolResult> => {
       try {
         const config = loadConfig().config;
-        // Apply org-resolution precedence centrally (§5.5): per-call `org` → config defaultOrg →
-        // CLI default. Tools then just read args.org and never see the config-fallback plumbing.
-        if ((args.org === undefined || args.org === '') && config.defaultOrg) {
-          args = { ...args, org: config.defaultOrg };
+        // Apply org-resolution precedence centrally (§5.5): per-call `org` → config
+        // defaultImhotepOrg → CLI default. Tools then just read args.org and never see the plumbing.
+        if ((args.org === undefined || args.org === '') && config.defaultImhotepOrg) {
+          args = { ...args, org: config.defaultImhotepOrg };
         }
         const result = await handler(args, config);
         return {
@@ -248,7 +248,7 @@ async function main(): Promise<void> {
   tool(
     'imhotep_set_config',
     'Set an Imhotep config value',
-    'Change a setting (defaultOrg, defaultProject, currentRelease, autonomousMode) at the global ' +
+    'Change a setting (defaultImhotepOrg, defaultImhotepProject, currentImhotepRelease, autonomousMode) at the global ' +
       'or project scope. Two-step: called without confirm=true it validates the value (resolving ' +
       'the org/project/release live) and returns a preview WITHOUT writing; call again with ' +
       'confirm=true to commit. Preview the change and get user approval before confirming.',

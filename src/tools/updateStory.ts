@@ -20,7 +20,7 @@ import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const updateStoryInputShape = {
   story: z.string().min(1).describe('The Story to update: number, Id, URL, or title fragment.'),
-  title: z.string().optional().describe('New title (Name).'),
+  title: z.string().max(80).optional().describe('New title (Name). Max 80 characters.'),
   description: z.string().optional().describe('Short user story (Markdown).'),
   acceptance_criteria: z.string().optional().describe('Acceptance criteria / DoD + tests (Markdown).'),
   build_notes: z.string().optional().describe('Solution build / implementation notes (Markdown).'),

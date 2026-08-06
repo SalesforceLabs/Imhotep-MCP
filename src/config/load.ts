@@ -48,7 +48,12 @@ export function projectConfigPath(cwd: string = process.cwd()): string {
   return join(cwd, 'imhotep.config.json');
 }
 
-/** Parse a JSONC file into a partial config object; throws with a clear message on syntax error. */
+/**
+ * Parse a JSONC file into a partial config object; throws with a clear message on syntax error.
+ * Deprecated top-level keys are normalized to their current names here (per-read), so every scope
+ * carries only canonical names BEFORE merge — preserving scope precedence (a project-scoped legacy
+ * key still beats a global-scoped new key) and keeping get_config / set_config consistent.
+ */
 export function readConfigFile(path: string): Partial<ImhotepConfig> {
   const raw = readFileSync(path, 'utf8');
   const errors: ParseError[] = [];
@@ -60,12 +65,50 @@ export function readConfigFile(path: string): Partial<ImhotepConfig> {
       `Invalid JSON in config file ${path} (${errors.length} parse error(s)). Check for a stray comma or bracket.`,
     );
   }
-  return parsed ?? {};
+  return normalizeLegacyKeys(parsed ?? {});
 }
 
 /** True for a plain object we should recurse into (not an array, null, or class instance). */
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Legacy config-key aliases → their current names (sub-inc 7a rename). A customer file that still
+ * uses an old key keeps working: we copy its value into the new key (unless the new key is already
+ * set in the SAME file) and warn on stderr so the tools only ever read the new names. This is the
+ * single source of truth for the rename — set_config imports it too.
+ */
+export const LEGACY_KEY_ALIASES: Readonly<Record<string, string>> = {
+  defaultOrg: 'defaultImhotepOrg',
+  defaultProject: 'defaultImhotepProject',
+  currentRelease: 'currentImhotepRelease',
+};
+
+/** Deprecation warnings already emitted this process, so we warn once per legacy key (not per read). */
+const warnedLegacyKeys = new Set<string>();
+
+/**
+ * Normalize deprecated top-level keys onto their new names, in place, returning the same object.
+ * Runs per-file-read (so precedence between scopes is preserved). Within one file, if both the old
+ * and new key are present the new key wins and the old is dropped. Warns once per legacy key per
+ * process (stderr — humans see it, never the MCP stdout protocol stream).
+ */
+export function normalizeLegacyKeys<T extends Partial<ImhotepConfig>>(config: T): T {
+  const c = config as Record<string, unknown>;
+  for (const [oldKey, newKey] of Object.entries(LEGACY_KEY_ALIASES)) {
+    if (c[oldKey] === undefined) continue;
+    if (c[newKey] === undefined) c[newKey] = c[oldKey];
+    delete c[oldKey];
+    if (!warnedLegacyKeys.has(oldKey)) {
+      warnedLegacyKeys.add(oldKey);
+      process.stderr.write(
+        `⚠ Imhotep config: "${oldKey}" is deprecated — renamed to "${newKey}". ` +
+          `Update your config; the old name still works for now.\n`,
+      );
+    }
+  }
+  return config;
 }
 
 /**
@@ -118,6 +161,7 @@ export function loadConfig(options: { cwd?: string; env?: NodeJS.ProcessEnv } = 
     config = deepMerge(config, readConfigFile(projectPath));
   }
 
+  // Each scope was already normalized in readConfigFile (preserving cross-scope precedence).
   return {
     config,
     sources: { default: defaultPath, global: globalPath, project: projectPath },

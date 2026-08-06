@@ -18,6 +18,11 @@
         "resourceLinkCount": "Resource_Link_Count__c"
       },
       "richTextFields": ["description"],
+      "fieldRules": {
+        "$comment": "Per-field validation the server enforces before write (maxLength from the live managed-package describe, 2026-08-06). Length is character count.",
+        "name": { "maxLength": 80 },
+        "description": { "maxLength": 32768 }
+      },
       "picklists": {
         "status": ["Planning", "Active", "Completed"]
       },
@@ -49,6 +54,12 @@
         "description": "Description__c"
       },
       "richTextFields": ["notes"],
+      "fieldRules": {
+        "$comment": "maxLength from the live managed-package describe (2026-08-06). Note description is 1000, notes (rich text) is 32768.",
+        "name": { "maxLength": 80 },
+        "description": { "maxLength": 1000 },
+        "notes": { "maxLength": 32768 }
+      },
       "picklists": {
         "status": ["Planning", "Active", "Accepted"],
         "releaseMode": ["Standard", "Simple"]
@@ -88,6 +99,14 @@
         "buildNotes",
         "deploymentChecklist"
       ],
+      "fieldRules": {
+        "$comment": "maxLength from the live managed-package describe (2026-08-06). Title (Name) is 80; the four rich-text bodies are 131072.",
+        "title": { "maxLength": 80 },
+        "description": { "maxLength": 131072 },
+        "acceptanceCriteria": { "maxLength": 131072 },
+        "buildNotes": { "maxLength": 131072 },
+        "deploymentChecklist": { "maxLength": 131072 }
+      },
       "picklists": {
         "status": ["Blocked", "Defined", "Building", "Testing", "Ready", "Deployed"],
         "type": ["New", "Change", "Defect"]

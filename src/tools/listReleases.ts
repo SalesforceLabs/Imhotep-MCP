@@ -23,7 +23,7 @@ export const listReleasesInputShape = {
     .optional()
     .describe(
       'The Project whose Releases to list: name fragment, Id, or record URL. ' +
-        'Defaults to the configured defaultProject when omitted.',
+        'Defaults to the configured defaultImhotepProject when omitted.',
     ),
   status: z.enum(['Planning', 'Active', 'Accepted']).optional().describe('Optional status filter.'),
   is_backlog: z
@@ -64,7 +64,7 @@ export async function listReleases(
       // Fall back to the configured working-context project when omitted (§5.5).
       const projectRef = contextProjectRef(input.project, config);
       if (!projectRef) {
-        return { note: 'No Project given and no defaultProject configured. Name a project, or set defaultProject via set_config.' };
+        return { note: 'No Project given and no defaultImhotepProject configured. Name a project, or set defaultImhotepProject via set_config.' };
       }
       // Resolve the Project to exactly one record first.
       const resolved = await resolveOne(conn, projectObj, projectRef, { org: input.org });

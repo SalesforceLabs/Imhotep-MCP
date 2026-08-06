@@ -5,16 +5,21 @@ import type { ImhotepConfig } from '../src/config/schema.js';
 const base: ImhotepConfig = {
   apiVersion: '62.0',
   objects: {},
-  defaultProject: 'GPS Accelerators',
-  currentRelease: 'R-2026.08',
+  defaultImhotepProject: 'GPS Accelerators',
+  currentImhotepRelease: 'R-2026.08',
 };
 
 describe('contextProjectRef (§5.5 precedence)', () => {
   it('uses the per-call value when given', () => {
     expect(contextProjectRef('Other Project', base)).toBe('Other Project');
   });
-  it('falls back to configured defaultProject', () => {
+  it('falls back to configured defaultImhotepProject', () => {
     expect(contextProjectRef(undefined, base)).toBe('GPS Accelerators');
+  });
+  it('still reads the deprecated defaultProject alias', () => {
+    expect(
+      contextProjectRef(undefined, { apiVersion: '62.0', objects: {}, defaultProject: 'Legacy' }),
+    ).toBe('Legacy');
   });
   it('returns null when neither is available', () => {
     expect(contextProjectRef(undefined, { apiVersion: '62.0', objects: {} })).toBeNull();
@@ -25,8 +30,13 @@ describe('contextReleaseRef (§5.5 precedence)', () => {
   it('uses the per-call value when given', () => {
     expect(contextReleaseRef('11.3', base)).toBe('11.3');
   });
-  it('falls back to configured currentRelease', () => {
+  it('falls back to configured currentImhotepRelease', () => {
     expect(contextReleaseRef(undefined, base)).toBe('R-2026.08');
+  });
+  it('still reads the deprecated currentRelease alias', () => {
+    expect(
+      contextReleaseRef(undefined, { apiVersion: '62.0', objects: {}, currentRelease: 'R-legacy' }),
+    ).toBe('R-legacy');
   });
   it('returns null when neither is available', () => {
     expect(contextReleaseRef(undefined, { apiVersion: '62.0', objects: {} })).toBeNull();

@@ -36,7 +36,7 @@ export function starterConfig(scope: Extract<ConfigScope, 'global' | 'project'>)
   // ─────────────────────────────────────────────────────────────────────────────
 
   // The org where Imhotep is installed (an \`sf\` CLI alias or username).
-  // "defaultOrg": "acme-prod",
+  // "defaultImhotepOrg": "acme-prod",
 
   // Default OFF. When true, permits unattended (subagent/automation) writes (§6).
   // "autonomousMode": false,
@@ -45,10 +45,10 @@ export function starterConfig(scope: Extract<ConfigScope, 'global' | 'project'>)
   // ~/.claude/skills/imhotep/ on start. Set false only if you manage that skill yourself.
   // "skillAutoInstall": true,
 
-  // Default WORKING CONTEXT — lets list/create tools assume a project/release when
-  // you don't name one. Accepts a name, Id, or record URL.
-  // "defaultProject": "GPS Accelerators",   // often GLOBAL (your most-common project)
-  // "currentRelease": "R-2026.08",          // usually PROJECT-level; changes as the build advances
+  // Default WORKING CONTEXT — lets list/create tools assume an Imhotep Project/Release
+  // when you don't name one. Accepts a name, Id, or record URL.
+  // "defaultImhotepProject": "GPS Accelerators",   // often GLOBAL (your most-common project)
+  // "currentImhotepRelease": "R-2026.08",          // usually PROJECT-level; changes as the build advances
 
   // Custom fields you've ADDED to managed objects, exposed to the AI by logical name:
   // "customFields": {

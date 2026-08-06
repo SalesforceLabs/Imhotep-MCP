@@ -12,7 +12,7 @@
 
 import { z } from 'zod';
 import type { ImhotepConfig } from '../config/schema.js';
-import { readScopeConfig } from '../config/load.js';
+import { readScopeConfig, LEGACY_KEY_ALIASES } from '../config/load.js';
 import { configPathForScope, setConfigKey } from '../config/write.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
@@ -21,13 +21,23 @@ import { ImhotepError } from '../salesforce/errors.js';
 
 /** The settings set_config accepts, with the value type each expects. */
 const SETTABLE_KEYS = [
+  'defaultImhotepOrg',
+  'defaultImhotepProject',
+  'currentImhotepRelease',
+  'autonomousMode',
+  'skillAutoInstall',
+  // Deprecated aliases (sub-inc 7a) — still accepted, normalized to the new key on write.
   'defaultOrg',
   'defaultProject',
   'currentRelease',
-  'autonomousMode',
-  'skillAutoInstall',
 ] as const;
 type SettableKey = (typeof SETTABLE_KEYS)[number];
+
+/** Canonicalize a (possibly deprecated) settable key to the key actually written. Single source of
+ *  truth is LEGACY_KEY_ALIASES in config/load.ts — imported so the rename table can't drift. */
+function canonicalKey(key: SettableKey): string {
+  return LEGACY_KEY_ALIASES[key] ?? key;
+}
 
 export const setConfigInputShape = {
   key: z.enum(SETTABLE_KEYS).describe('The setting to change.'),
@@ -55,8 +65,13 @@ export interface SetConfigResult {
 }
 
 export async function setConfig(input: SetConfigInput, config: ImhotepConfig): Promise<SetConfigResult> {
-  const key = input.key as SettableKey;
+  const requestedKey = input.key as SettableKey;
+  // Normalize a deprecated alias to the key we actually store (sub-inc 7a).
+  const key = canonicalKey(requestedKey);
+  // The legacy alias for this key, if any (so we can clean it out of the file on write).
+  const legacyKey = Object.keys(LEGACY_KEY_ALIASES).find((k) => LEGACY_KEY_ALIASES[k] === key);
   const path = configPathForScope(input.scope);
+  // readScopeConfig normalizes on read, so a stored legacy value surfaces under the canonical key.
   const previous = (readScopeConfig(input.scope).config as Record<string, unknown>)[key];
 
   // `config` is reloaded fresh per invocation by the server, so validation sees any org/project
@@ -79,6 +94,15 @@ export async function setConfig(input: SetConfigInput, config: ImhotepConfig): P
   }
 
   setConfigKey(path, [key], value);
+  // Clear the deprecated alias for this key if the file still carried it, so both names don't
+  // linger on disk (setConfigKey with undefined deletes the key; a no-op if it was absent).
+  if (legacyKey) {
+    try {
+      setConfigKey(path, [legacyKey], undefined);
+    } catch {
+      /* best-effort cleanup; the loader still normalizes the alias on read */
+    }
+  }
   return {
     committed: true,
     key,
@@ -90,9 +114,12 @@ export async function setConfig(input: SetConfigInput, config: ImhotepConfig): P
   };
 }
 
-/** Validate/coerce a value for a given key, resolving live references to catch typos. */
+/**
+ * Validate/coerce a value for a given (already-canonicalized) key, resolving live references to
+ * catch typos. `key` is the canonical name — never a deprecated alias (setConfig normalizes first).
+ */
 async function validateValue(
-  key: SettableKey,
+  key: string,
   raw: string | boolean,
   config: ImhotepConfig,
 ): Promise<string | boolean> {
@@ -108,25 +135,25 @@ async function validateValue(
   }
   const value = raw.trim();
 
-  if (key === 'defaultOrg') {
+  if (key === 'defaultImhotepOrg') {
     // Validate the org authenticates via the sf CLI (catches a bad alias).
     try {
       await getOrgAuth(value);
     } catch (err) {
       throw new ImhotepError(
-        `Can't set defaultOrg="${value}": that org isn't authorized with the \`sf\` CLI ` +
+        `Can't set defaultImhotepOrg="${value}": that org isn't authorized with the \`sf\` CLI ` +
           `(${err instanceof Error ? err.message : String(err)}).`,
       );
     }
     return value;
   }
 
-  // defaultProject / currentRelease: verify the record resolves in the (current default) org.
-  const objectKey = key === 'defaultProject' ? 'project' : 'release';
+  // defaultImhotepProject / currentImhotepRelease: verify the record resolves in the default org.
+  const objectKey = key === 'defaultImhotepProject' ? 'project' : 'release';
   const obj = config.objects[objectKey];
   if (obj) {
-    const resolved = await withConnection(config.defaultOrg, config.apiVersion, (conn) =>
-      resolveOne(conn, obj, value, { org: config.defaultOrg }),
+    const resolved = await withConnection(config.defaultImhotepOrg, config.apiVersion, (conn) =>
+      resolveOne(conn, obj, value, { org: config.defaultImhotepOrg }),
     );
     if (!resolved.record) {
       throw new ImhotepError(

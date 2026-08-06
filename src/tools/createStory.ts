@@ -33,9 +33,9 @@ export const createStoryInputShape = {
     .optional()
     .describe(
       'The Release to create the Story under (name, Id, or URL). ' +
-        'Defaults to the configured currentRelease when omitted.',
+        'Defaults to the configured currentImhotepRelease when omitted.',
     ),
-  title: z.string().min(1).describe('The Story title (the Name field).'),
+  title: z.string().min(1).max(80).describe('The Story title (the Name field). Max 80 characters.'),
   description: z.string().optional().describe('Short user story (Markdown).'),
   acceptance_criteria: z.string().optional().describe('Acceptance criteria / DoD + tests (Markdown).'),
   build_notes: z.string().optional().describe('Solution build / implementation notes (Markdown).'),
@@ -81,10 +81,10 @@ export async function createStory(
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {
-      // Working context (§5.5): fall back to configured currentRelease when omitted.
+      // Working context (§5.5): fall back to configured currentImhotepRelease when omitted.
       const releaseRef = contextReleaseRef(input.release, config);
       if (!releaseRef) {
-        return { note: 'No Release given and no currentRelease configured. Name a release, or set currentRelease via set_config.' };
+        return { note: 'No Release given and no currentImhotepRelease configured. Name a release, or set currentImhotepRelease via set_config.' };
       }
       // Resolve the Release, then DERIVE Project from it (avoids the validation trap).
       const rel = await resolveOne(conn, releaseObj, releaseRef, { org: input.org });

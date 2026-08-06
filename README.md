@@ -120,7 +120,7 @@ node dist/server.js init --global    # Option B — from inside the imhotep-mcp 
 (both no-clobber — safe to re-run). `--global` puts the config at `~/.imhotep/config.json` (shared
 by all your projects); omit it to scaffold a project-local `./imhotep.config.json` in the current
 directory instead. Then set your org, e.g. by asking Claude to run
-`imhotep_set_config defaultOrg <your-sf-org-alias>`.
+`imhotep_set_config defaultImhotepOrg <your-sf-org-alias>`.
 
 ## Updating
 
@@ -154,7 +154,7 @@ Remove the pieces in any order:
    client).
 2. **Remove the skill** — `rm -rf ~/.claude/skills/imhotep/`.
 3. **Remove your config** _(optional)_ — `rm -rf ~/.imhotep/` deletes your saved settings
-   (`defaultOrg`, `defaultProject`, …). Skip this to keep them for a later reinstall.
+   (`defaultImhotepOrg`, `defaultImhotepProject`, …). Skip this to keep them for a later reinstall.
 4. **Remove the code:**
    - **Option A (npx):** nothing is installed globally — npx runs from a cache, so there's nothing
      to uninstall. (If you ever ran `npm install -g imhotep-mcp`, remove it with
@@ -207,9 +207,9 @@ in Markdown; the server stores it as HTML.
 **Configure**
 
 - **`imhotep_get_config`** — show your current settings (merged, or a single scope).
-- **`imhotep_set_config`** — set a value (`defaultOrg`, `defaultProject`, `currentRelease`,
-  `autonomousMode`) at the global or project scope. Previews the change first; you confirm before
-  it's written.
+- **`imhotep_set_config`** — set a value (`defaultImhotepOrg`, `defaultImhotepProject`,
+  `currentImhotepRelease`, `autonomousMode`) at the global or project scope. Previews the change
+  first; you confirm before it's written.
 - **`imhotep_init_config`** — scaffold a documented starter config file.
 
 Set a default org and project once, and the other tools assume them — so "what's in flight" or
@@ -228,7 +228,29 @@ Settings live in an `imhotep.config.json` at either scope, most-specific winning
 
 You don't hand-edit these unless you want to: `npx imhotep-mcp init` (or the `imhotep_init_config`
 tool) scaffolds a documented starter, and `imhotep_set_config` sets values for you (previewing
-first). Common keys: `defaultOrg`, `defaultProject`, `currentRelease`, `autonomousMode`.
+first). Common keys: `defaultImhotepOrg`, `defaultImhotepProject`, `currentImhotepRelease`,
+`autonomousMode`.
+
+### Working across multiple Imhotep orgs
+
+`defaultImhotepOrg` is settable at **either** scope, so different projects can target different Imhotep
+orgs. Set your usual org globally, then override it per-project where it differs:
+
+```
+# in a repo that targets a different Imhotep org than your global default:
+ask Claude: "set my default Imhotep org to acme-sandbox for this project"
+# → writes defaultImhotepOrg to ./imhotep.config.json (project scope), overriding the global
+```
+
+Precedence, most-specific wins: per-call `org` argument → project `./imhotep.config.json` → global
+`~/.imhotep/config.json` → your `sf` CLI default. The same scoping applies to
+`defaultImhotepProject` and `currentImhotepRelease` (typically the release is set per-project and
+moves as the build advances).
+
+> **Renamed keys:** `defaultOrg` → **`defaultImhotepOrg`**, `defaultProject` →
+> **`defaultImhotepProject`**, and `currentRelease` → **`currentImhotepRelease`** (clearer, since
+> "org"/"project"/"release" are each overloaded terms). The old names still work but are deprecated
+> and will warn; update your config files when convenient.
 
 Behavioral guidance ("we skip the Testing status", "tag every Defect with 'triage'") belongs in
 your project's `CLAUDE.md` or memories, not in `imhotep.config.json` — config is for structure the

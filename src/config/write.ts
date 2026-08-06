@@ -50,7 +50,7 @@ function atomicWrite(path: string, content: string): void {
 /**
  * Set a single top-level key in the config file at `path`, preserving existing comments and
  * formatting. Creates the file (as `{}` then the key) if absent. Returns the new file text.
- * `keyPath` is a jsonc-parser path array, e.g. ["defaultOrg"] or ["defaults","getStory","include"].
+ * `keyPath` is a jsonc-parser path array, e.g. ["defaultImhotepOrg"] or ["defaults","getStory","include"].
  */
 export function setConfigKey(path: string, keyPath: (string | number)[], value: unknown): string {
   const existing = existsSync(path) ? readFileSync(path, 'utf8') : '{}\n';

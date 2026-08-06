@@ -11,6 +11,12 @@
 /** Logical-name → Salesforce API-name map for one object's fields (API names un-prefixed). */
 export type FieldMap = Record<string, string>;
 
+/** Per-field validation rule the server enforces before write (plan §5.2, sub-inc 7a). */
+export interface FieldRule {
+  /** Max character length; a longer value is rejected before the API call. */
+  maxLength?: number;
+}
+
 /** Per-object schema description carried in config. */
 export interface ObjectConfig {
   /** Object API name, un-prefixed (e.g. "Story__c"); the namespace is prepended at runtime. */
@@ -23,6 +29,8 @@ export interface ObjectConfig {
   storyNumberField?: string;
   /** Logical → API name field map. */
   fields: FieldMap;
+  /** Logical field name → validation rule (max length, …) enforced before write. */
+  fieldRules?: Record<string, FieldRule>;
   /** Logical field names that hold rich text (HTML ⇄ Markdown). */
   richTextFields?: string[];
   /** Logical picklist name → allowed values. */
@@ -69,15 +77,31 @@ export interface ImhotepConfig {
 
   // --- Customer-override-only keys (absent from shipped defaults; §7.4) ---
 
-  /** Default org alias/username where Imhotep is installed. */
-  defaultOrg?: string;
+  /** Default org (an `sf` CLI alias/username) where Imhotep is installed. */
+  defaultImhotepOrg?: string;
   /** When true, permits unattended writes (default OFF; §6). */
   autonomousMode?: boolean;
   /** When true (default), the server auto-installs/refreshes the shipped skill on start (§4.3). */
   skillAutoInstall?: boolean;
-  /** Default working-context project (name, Id, or URL). */
+  /** Default working-context Imhotep Project (name, Id, or URL). */
+  defaultImhotepProject?: string;
+  /** Current working-context Imhotep Release (name, Id, or URL). */
+  currentImhotepRelease?: string;
+
+  /**
+   * @deprecated Renamed to `defaultImhotepOrg` (sub-inc 7a). Still read for back-compat;
+   * the loader normalizes it into the new key and warns. Remove in a future major.
+   */
+  defaultOrg?: string;
+  /**
+   * @deprecated Renamed to `defaultImhotepProject` (sub-inc 7a). Still read for back-compat;
+   * the loader normalizes it into the new key and warns. Remove in a future major.
+   */
   defaultProject?: string;
-  /** Current working-context release (name, Id, or URL). */
+  /**
+   * @deprecated Renamed to `currentImhotepRelease` (sub-inc 7a). Still read for back-compat;
+   * the loader normalizes it into the new key and warns. Remove in a future major.
+   */
   currentRelease?: string;
   /** Custom fields the customer added to managed objects, by object → logical → API name. */
   customFields?: Record<string, FieldMap>;

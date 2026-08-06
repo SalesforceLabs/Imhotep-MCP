@@ -68,6 +68,24 @@ them for Simple stories unless asked.
 **Rich text:** author body fields in **Markdown** — the server converts to/from the HTML Salesforce
 stores. Don't hand-write HTML.
 
+## Field limits & rules (draft within these the first time)
+
+The server **enforces** these before every write and returns a clear error if you exceed them — but
+draft within them up front so you don't waste a round-trip on a rejection:
+
+- **Story / Release / Project name (title) — max 80 characters.** This is the one that bites most:
+  keep titles short and specific. If a user's phrasing would exceed 80, tighten it (don't just
+  truncate mid-word) and mention you shortened it.
+- **Release Description — max 1000 characters** (short summary). Longer release prose goes in
+  **Release Notes** (`notes`, up to 32768).
+- **Project Description — max 32768 characters.**
+- **Story bodies** (Description, Acceptance Criteria, Solution Build Notes, Deployment Checklist) —
+  up to 131072 characters each; effectively no practical limit, but respect the *semantic* split
+  above (keep Description short regardless of the limit).
+- **Picklists / Type / Status** — use only the values listed above; the server rejects others.
+- **Required:** a Story needs a Release; a Release needs a Project. The server derives Story.Project
+  from the Release automatically — don't set it yourself.
+
 ## Confirm before writing
 
 Platform permissions decide what the user *can* do; **you** decide what they *should* do right now.
@@ -86,15 +104,44 @@ context*. It is **off by default**; when off, always confirm.
 ## Which org / project / release (working context)
 
 Tools accept an optional `org`, and list/create tools an optional `project`/`release`. When the user
-omits them, the server falls back to configured defaults (`defaultOrg`, `defaultProject`,
-`currentRelease`). So:
+omits them, the server falls back to configured defaults (`defaultImhotepOrg`, `defaultImhotepProject`,
+`currentImhotepRelease`). So:
 
 - If a request is ambiguous about **which org** Imhotep is in and no default is set, ask once —
-  then suggest saving it with `imhotep_set_config` (`defaultOrg`) so it's not asked again.
-- Similarly, offer to set `defaultProject` / `currentRelease` when a user repeatedly works in the
-  same project/release. This makes "what's in flight" work without restating context.
+  then suggest saving it with `imhotep_set_config` (`defaultImhotepOrg`) so it's not asked again.
+- **Org is per-scope.** `defaultImhotepOrg` can be set **globally** (your usual org) *or* **per-project**
+  (`scope: "project"` writes it to that repo's `./imhotep.config.json`, overriding the global). When
+  a user works across different Imhotep orgs in different repos, set a project-level `defaultImhotepOrg` in
+  each — so each project targets the right org without restating it. Offer this when you notice a
+  user in a repo whose org differs from their global default.
+- Similarly, offer to set `defaultImhotepProject` / `currentImhotepRelease` when a user repeatedly
+  works in the same project/release. This makes "what's in flight" work without restating context.
+  (These keys were formerly `defaultOrg` / `defaultProject` / `currentRelease` — the old names still
+  work but are deprecated; use the new `defaultImhotepOrg` / `defaultImhotepProject` /
+  `currentImhotepRelease`.)
 - A record reference can be a name, a Story number, an 18/15-char Id, or a pasted record URL — pass
   whatever the user gives you; the server resolves it (and returns candidates if it's ambiguous).
+
+### Starting work in a new project (proactive setup)
+
+When a user first uses Imhotep in a **new repo/workspace** — or their requests keep needing an
+org/project/release you have to ask for — proactively help them set up a **project-scoped** config so
+this repo "just works" afterward. A project config lives at `./imhotep.config.json` and overrides the
+global for this repo. Typical flow:
+
+1. Confirm **which Imhotep org** this project targets. If it differs from the global `defaultImhotepOrg`,
+   set it project-scoped: `imhotep_set_config` with `key: "defaultImhotepOrg"`, `scope: "project"`.
+2. Set the **working context** for this repo, project-scoped:
+   - `defaultImhotepProject` — the Imhotep Project this repo's work belongs to.
+   - `currentImhotepRelease` — the release currently being built (update it as the build advances).
+3. Each `set_config` previews first (two-step); get the user's OK, then `confirm: true`.
+
+You don't have to hand-author the file — `imhotep_set_config` (`scope: "project"`) creates
+`./imhotep.config.json` on first write. `imhotep_init_config` (`scope: "project"`) is available too,
+for scaffolding a fully-commented starter up front. **Always write the current key names**
+(`defaultImhotepProject`, `currentImhotepRelease`) — not the deprecated `defaultProject` /
+`currentRelease`. After setup, "what's in flight" / "create a story titled …" work in this repo
+without restating org/project/release.
 
 ## Shipped vs. yours (customize in the right place)
 

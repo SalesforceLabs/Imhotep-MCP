@@ -26,8 +26,8 @@ export const updateReleaseInputShape = {
   start_date: z.string().optional().describe('Start date (YYYY-MM-DD).'),
   release_date: z.string().optional().describe('Release date (YYYY-MM-DD).'),
   points_goal: z.number().optional().describe('Points goal.'),
-  notes: z.string().optional().describe('Release Notes (Markdown → HTML).'),
-  description: z.string().optional().describe('Description (plain text).'),
+  notes: z.string().optional().describe('Release Notes (Markdown → HTML). Max 32768 characters.'),
+  description: z.string().max(1000).optional().describe('Description (plain text). Max 1000 characters.'),
   org: z.string().optional().describe('Optional Salesforce org alias/username to target.'),
 };
 

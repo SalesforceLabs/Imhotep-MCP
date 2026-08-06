@@ -18,30 +18,31 @@ import { nsApiName } from '../util/namespace.js';
 import { selectClause, selectFields, shapeRecord, soqlEscape } from './query.js';
 import { resolveOne, type ResolveResult } from './resolve.js';
 
-// Org-resolution precedence (§5.5: per-call `org` → config `defaultOrg` → CLI default) is applied
+// Org-resolution precedence (§5.5: per-call `org` → config `defaultImhotepOrg` → CLI default) is applied
 // centrally in the server's tool wrapper, so tools just read their `org` arg.
 
 /**
  * Resolve the working-context PROJECT reference: the per-call value if given, else the
- * configured default (§5.5 precedence: per-call → project/global config `defaultProject`).
+ * configured default (§5.5 precedence: per-call → project/global config `defaultImhotepProject`).
  * Returns the reference string to resolve, or null if none is available (caller should ask).
  */
 export function contextProjectRef(
   perCall: string | undefined,
   config: ImhotepConfig,
 ): string | null {
-  return perCall ?? config.defaultProject ?? null;
+  // New key first; fall back to the deprecated alias in case a raw (un-normalized) config is passed.
+  return perCall ?? config.defaultImhotepProject ?? config.defaultProject ?? null;
 }
 
 /**
  * Resolve the working-context RELEASE reference: per-call value, else configured
- * `currentRelease`. Returns null if none available.
+ * `currentImhotepRelease`. Returns null if none available.
  */
 export function contextReleaseRef(
   perCall: string | undefined,
   config: ImhotepConfig,
 ): string | null {
-  return perCall ?? config.currentRelease ?? null;
+  return perCall ?? config.currentImhotepRelease ?? config.currentRelease ?? null;
 }
 
 /**
