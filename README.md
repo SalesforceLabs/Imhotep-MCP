@@ -272,6 +272,47 @@ skill is overwritten to stay current, don't hand-edit it — put your own workfl
 `skillAutoInstall: false`. The skill is Claude-specific; in other MCP clients the tools still work
 via their descriptions, just without this guidance layer.
 
+## Stories vs. plans (how they fit together)
+
+If you're using an AI assistant to help plan and build in Salesforce, you're probably generating
+all kinds of plans (or specs, or design docs) that you didn't have before generative AI came
+along. So how do you fold that into your story-driven Agile process? To do that, it helps to know
+what each artifact is for — so a **plan** (or spec / design doc) and an Imhotep **Story**
+complement each other rather than duplicate.
+
+Think of it as **bookends and a middle**:
+
+- **The Story is the durable bookends.** It's your system-of-record, written for people — the
+  *intent* going in (its Description and Acceptance Criteria) and the distilled *outcome* coming
+  out (Solution Build Notes, the deploy checklist, what metadata changed). It outlives the build
+  and rolls up to its Release and Project.
+- **The plan is the transient middle.** It's the detailed, step-by-step execution script the
+  assistant works from. It's working memory — often local and temporary — and it goes stale once
+  the work is done.
+
+|  | Plan (spec / design doc) | Imhotep Story |
+|---|---|---|
+| **Audience** | Your AI assistant, to drive the build | You + your team + future-you |
+| **Lifetime** | Transient — working memory for one build | Durable system-of-record; rolls up to Release & Project |
+| **Altitude** | Every technical detail | Intent + decisions + outcome, distilled |
+| **Answers** | *How do we build this, step by step?* | *What did we decide, what got built, what will I need later?* |
+
+So a good Story **summarizes and points to** the plan; it doesn't transcribe it. And because a
+plan may be local, temporary, or absent, the Story is written to **stand on its own** — a
+self-contained summary, not a "see the plan" pointer.
+
+**The relationship goes both ways**, depending on where the work started:
+
+- **From the backlog (Story first).** You already have a Story — maybe just a rough seed —
+  and you pull it up to work on it: _"let's figure out the customer onboarding flow bug story."_
+  The plan is spun up to execute it, and the Story's intent gets sharpened as you learn more.
+- **From an idea (plan first).** You flesh out an idea into a plan, then create the Story to
+  capture the intent and, later, the outcome.
+
+Either way, the plan carries the *how-to-build-it* detail; the Story carries the *what-we-decided
+and what-we-shipped* record. The shipped skill teaches the assistant to keep each field at the
+right altitude — see [The skill](#the-skill).
+
 ## Compatibility & versioning
 
 The server is versioned on its **own** semantic-version line (starting at **1.0.0**), independent

@@ -45,16 +45,48 @@ Release, which lives under a Project. Stories carry rich-text bodies, child stor
 
 ## Story field semantics (the high-value part)
 
-Imhotep has four rich-text body fields. Putting content in the *right* one is editorial judgment no
-tool can enforce — get this right:
+A Story is a **durable system-of-record** — authored for humans (the team, and future-you),
+built to outlive any one build. That's its relationship to a plan/spec/design doc: **the plan is
+the transient execution detail; the Story is the durable bookends** — the *intent* going in and
+the distilled *record* coming out. So when a detailed plan or spec exists for a Story's scope,
+the Story **summarizes and points to it — it does not transcribe it.**
 
-- **Description** — a **short** user story ("As a … I want … so that …"). Keep it brief; it is not
-  the place for implementation detail.
-- **Acceptance Criteria / Tests** — the definition of done and how it'll be verified.
-- **Solution Build Notes** — the implementation detail. **Most substantive body content goes here**,
-  not in Description.
-- **Deployment Checklist** — **only** manual deploy steps *not* covered by DevOps Center Work Item
-  promotion (e.g. "activate the flow", "assign the permission set"). Not a general notes field.
+**Critical: the Story must stand alone.** A plan may be local, temporary, or absent entirely, so
+never make the Story *depend* on it — write each field to be self-sufficient at the summary
+altitude, referencing the plan for those who have it. "See the plan" is a dangling pointer, not a
+Story.
+
+Imhotep has four rich-text body fields. Putting content in the *right* one, at the *right
+altitude*, is editorial judgment no tool can enforce — get this right:
+
+- **Description** — a **short** user story ("As a … I want … so that …"). Keep it brief; protect
+  it from implementation detail. It may start as a rough seed and get sharpened over time (see
+  *Editing a Story* below) — but it stays a short statement of intent.
+- **Acceptance Criteria / Tests** — the acceptance conditions / definition of done: what you'd
+  check to *accept* the Story, and how it's verified. Not a dump of test code.
+- **Solution Build Notes** — the durable **distillation of the solution**, NOT a transcription
+  of the plan. High-signal only. Structure it as:
+  - **Solution summary** — functional *and* technical, at altitude (what was done and why — a few
+    paragraphs, not the step-by-step).
+  - **Key decisions & rationale** — why this approach; what was considered and rejected. *This is
+    the highest-value content* — it's what a plan captures only temporarily.
+  - **References (where relevant and useful)** — the plan/spec, related docs, and any URL or
+    Salesforce Help article that genuinely matters (a known issue/outage the bug relates to, a
+    security policy being implemented, a link quoted in the work). Don't manufacture links to fill
+    this out — include a reference only when there's a real reason to point to it.
+  - **Gotchas / concerns / risks** — what a future reader needs flagged.
+  - **Build checklist** — the waves/increments, **one line each** (what it builds / what got
+    built). Keep it lean — decisions and outcomes, not a blow-by-blow log.
+  - **Metadata manifest** — components **New / Updated / Deleted**, each as: metadata **type**
+    (Flow, Apex class, LWC, permission set, …), **name/label**, and **API name**.
+
+  Principle: **map + decisions + manifest, not the territory.** If it's execution detail already
+  in the plan, link to it — don't copy it in.
+- **Deployment Checklist** — **only** the manual, by-hand steps a human must perform to deploy —
+  the things you won't or can't let automation/DevOps Center do (e.g. activate a Flow, replicate
+  a setting DevOps Center can't deploy, edit a Profile, a post-deploy data step). If a step can
+  be automated or DevOps Center can deploy it, it does **not** belong here. This is **not** a
+  general build checklist and **not** a notes field.
 
 **Picklists (the real managed-package values):**
 - Story **Status**: `Blocked`, `Defined`, `Building`, `Testing`, `Ready`, `Deployed`.
@@ -67,6 +99,20 @@ them for Simple stories unless asked.
 
 **Rich text:** author body fields in **Markdown** — the server converts to/from the HTML Salesforce
 stores. Don't hand-write HTML.
+
+## Editing a Story (update discipline)
+
+Updates **overwrite** — the server replaces the whole field value with whatever you send; it does
+not merge or append. So when changing an *existing* Story:
+
+1. **Read first** — `imhotep_get_story` to see the current field contents.
+2. **Preserve, then extend or patch:**
+   - **Append** to log-shaped content (Build Notes' build checklist, decisions, metadata
+     manifest) — add the new entry; keep the prior ones.
+   - **Patch in place** the changed span of prose (Description, Acceptance Criteria) — a seed
+     Story's intent is *refined* as understanding sharpens, not replaced.
+3. **Re-send the merged whole.** **Never regenerate a field from scratch on update** — you'll
+   destroy prior context and the user's original wording.
 
 ## Field limits & rules (draft within these the first time)
 
@@ -92,8 +138,13 @@ Platform permissions decide what the user *can* do; **you** decide what they *sh
 Before any write (`create_story`, `update_story`, `transfer_story`, `update_release`) or a config
 change:
 
-1. **Preview** the change — say what will be written, to which record, in which org.
-2. **Get the user's OK** before calling the tool. This matters most against **production** data.
+1. **Present the complete change set — just before writing.** Show every field that will change
+   and its new value. For an edited rich-text body, show the **merged result you're about to
+   send** (you read it first, preserved what was there, and patched/appended — see *Editing a
+   Story*), not a vague "I'll update the notes." Name the record (Story #/name) and the org.
+2. **Get the user's explicit OK immediately before the tool call.** This holds for every write —
+   `create_story`, `update_story`, `transfer_story`, `update_release` — and config changes. It
+   matters most against **production** data.
 3. `imhotep_set_config` is explicitly two-step: it returns a validated preview first; call it again
    with `confirm: true` only after the user agrees.
 
