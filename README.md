@@ -1,7 +1,7 @@
 # Imhotep MCP Server
 
-> **Status:** v1, pre-release. The full v1 toolset is built and working; a public release (GitHub +
-> npm) follows once the project completes its open-source review.
+> [!IMPORTANT]
+> **Status: v1, pre-release.** The full v1 toolset is built and working; a public release (GitHub + npm) follows once the project completes its open-source review.
 
 > _Laying the foundation stones…_
 
@@ -35,7 +35,7 @@ work in other MCP clients via their own server-registration mechanism.)
 - **Option A — npx (zero-install).** The simplest path: no clone, no build; Claude Code fetches the
   published package on demand. _Available once the project is publicly released._
 - **Option B — install from source (clone & build).** Clone the repo, build it, and register the
-  built server. _Available now_ — and always available for anyone who prefers to run from source.
+  built server. _**Available now**_ — and always available for anyone who prefers to run from source.
 
 Pick one, follow its subsection, then do **Finish setup** at the end.
 
@@ -54,7 +54,7 @@ claude mcp add imhotep -s user -- npx -y imhotep-mcp@1
 project instead, drop `-s user`.
 
 <details>
-<summary>Manual alternative (edit <code>.mcp.json</code> yourself)</summary>
+<summary><strong>Manual edits alternative</strong> (edit <code>.mcp.json</code> yourself)</summary>
 
 Instead of the command above, add this `mcpServers` entry to your Claude Code config — `~/.claude.json`
 for all projects, or a `.mcp.json` in a project root to scope it to that project:
@@ -64,8 +64,7 @@ for all projects, or a `.mcp.json` in a project root to scope it to that project
 ```
 </details>
 
-Either way (command or manual JSON), **restart / reload Claude Code** afterward so it launches the
-server.
+**Proceed to the Finish setup section (below).**
 
 ### Option B — install from source (clone & build)
 
@@ -91,7 +90,7 @@ claude mcp add imhotep -s user -- node "$(pwd)/dist/server.js"
 project instead, drop `-s user`.
 
 <details>
-<summary>Manual alternative (edit <code>.mcp.json</code> yourself)</summary>
+<summary><strong>Manual edits alternative</strong> (edit <code>.mcp.json</code> yourself)</summary>
 
 Instead of the command above, add this `mcpServers` entry to your Claude Code config — `~/.claude.json`
 for all projects, or a `.mcp.json` in a project root to scope it to that project. Replace the path
@@ -103,10 +102,12 @@ e.g. `/Users/you/dev/imhotep-mcp/dist/server.js`):
 ```
 </details>
 
-Either way (command or manual JSON), **restart / reload Claude Code** afterward so it launches the
-server.
+**Proceed to the Finish setup section (below).**
 
 ### Finish setup (both options)
+
+Either way (command or manual JSON), **restart / reload Claude Code** afterward so it launches the
+server.
 
 Scaffold your configuration and install the skill. **From your terminal, run the line for the
 option you chose:**
