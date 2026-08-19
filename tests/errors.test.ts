@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { translateSalesforceError, toImhotepError, ImhotepError } from '../src/salesforce/errors.js';
+import {
+  translateSalesforceError,
+  toImhotepError,
+  ImhotepError,
+} from '../src/salesforce/errors.js';
 
 describe('translateSalesforceError', () => {
   it('translates insufficient access, naming object and org', () => {

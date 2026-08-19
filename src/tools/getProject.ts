@@ -49,11 +49,9 @@ export async function getProject(
   const projectObj = config.objects.project;
   if (!projectObj) throw new Error('Project object is not configured.');
 
-  const includes = resolveIncludes(
-    input.include,
-    config.defaults?.getProject?.include,
-    [...AVAILABLE_INCLUDES],
-  );
+  const includes = resolveIncludes(input.include, config.defaults?.getProject?.include, [
+    ...AVAILABLE_INCLUDES,
+  ]);
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {

@@ -37,7 +37,10 @@ export const createStoryInputShape = {
     ),
   title: z.string().min(1).max(80).describe('The Story title (the Name field). Max 80 characters.'),
   description: z.string().optional().describe('Short user story (Markdown).'),
-  acceptance_criteria: z.string().optional().describe('Acceptance criteria / DoD + tests (Markdown).'),
+  acceptance_criteria: z
+    .string()
+    .optional()
+    .describe('Acceptance criteria / DoD + tests (Markdown).'),
   build_notes: z.string().optional().describe('Solution build / implementation notes (Markdown).'),
   deployment_checklist: z.string().optional().describe('Manual deploy steps (Markdown).'),
   type: z.enum(['New', 'Change', 'Defect']).default('New').describe('Story type.'),
@@ -84,12 +87,17 @@ export async function createStory(
       // Working context (§5.5): fall back to configured currentImhotepRelease when omitted.
       const releaseRef = contextReleaseRef(input.release, config);
       if (!releaseRef) {
-        return { note: 'No Release given and no currentImhotepRelease configured. Name a release, or set currentImhotepRelease via set_config.' };
+        return {
+          note: 'No Release given and no currentImhotepRelease configured. Name a release, or set currentImhotepRelease via set_config.',
+        };
       }
       // Resolve the Release, then DERIVE Project from it (avoids the validation trap).
       const rel = await resolveOne(conn, releaseObj, releaseRef, { org: input.org });
       if (!rel.record) {
-        return { releaseCandidates: rel.candidates ?? [], note: rel.note ?? 'Could not resolve the Release.' };
+        return {
+          releaseCandidates: rel.candidates ?? [],
+          note: rel.note ?? 'Could not resolve the Release.',
+        };
       }
       const releaseId = rel.record.id as string;
       const projectId = rel.record.project as string | null;
@@ -107,7 +115,10 @@ export async function createStory(
           allowStoryNumber: true,
         });
         if (!parent.record) {
-          return { parentCandidates: parent.candidates ?? [], note: parent.note ?? 'Could not resolve the parent Story.' };
+          return {
+            parentCandidates: parent.candidates ?? [],
+            note: parent.note ?? 'Could not resolve the parent Story.',
+          };
         }
         parentId = parent.record.id as string;
       }
@@ -150,9 +161,13 @@ export async function createStory(
       const story = await verifyAfterWrite(conn, storyObj, created.id);
       // Return bodies as Markdown for a friendly result.
       for (const logicalBody of storyObj.richTextFields ?? []) {
-        if (logicalBody in story) story[logicalBody] = htmlToMarkdown(story[logicalBody] as string | null);
+        if (logicalBody in story)
+          story[logicalBody] = htmlToMarkdown(story[logicalBody] as string | null);
       }
-      return { story, note: `Created ${story.storyNumber ?? '(new Story)'}. ${autonomousNote(config)}` };
+      return {
+        story,
+        note: `Created ${story.storyNumber ?? '(new Story)'}. ${autonomousNote(config)}`,
+      };
     });
   } catch (err) {
     if (err instanceof ImhotepError) throw err;

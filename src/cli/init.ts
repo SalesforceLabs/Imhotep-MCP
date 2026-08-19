@@ -22,8 +22,10 @@ import { ensureSkillInstalled } from '../skill/install.js';
 function version(): string {
   try {
     const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-    return (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version?: string })
-      .version ?? '';
+    return (
+      (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as { version?: string })
+        .version ?? ''
+    );
   } catch {
     return '';
   }
@@ -62,7 +64,9 @@ export function runInit(args: string[]): void {
 
   out('');
   out('Next steps (in Claude, with the server already registered):');
-  out('  1. Set your org:       ask Claude to run imhotep_set_config defaultImhotepOrg <your-sf-org-alias>');
+  out(
+    '  1. Set your org:       ask Claude to run imhotep_set_config defaultImhotepOrg <your-sf-org-alias>',
+  );
   out('  2. (Optional) project: imhotep_set_config defaultImhotepProject "<your project>"');
   out('  3. Try it:             ask Claude to open a Story, e.g. "show me S000013"');
   out('');

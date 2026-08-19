@@ -28,7 +28,7 @@ describe('selectFields / selectClause', () => {
 });
 
 describe('soqlEscape', () => {
-  it("escapes single quotes and backslashes", () => {
+  it('escapes single quotes and backslashes', () => {
     expect(soqlEscape("O'Brien")).toBe("O\\'Brien");
     expect(soqlEscape('a\\b')).toBe('a\\\\b');
   });

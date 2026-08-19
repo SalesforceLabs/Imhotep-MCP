@@ -64,7 +64,9 @@ export async function listReleases(
       // Fall back to the configured working-context project when omitted (§5.5).
       const projectRef = contextProjectRef(input.project, config);
       if (!projectRef) {
-        return { note: 'No Project given and no defaultImhotepProject configured. Name a project, or set defaultImhotepProject via set_config.' };
+        return {
+          note: 'No Project given and no defaultImhotepProject configured. Name a project, or set defaultImhotepProject via set_config.',
+        };
       }
       // Resolve the Project to exactly one record first.
       const resolved = await resolveOne(conn, projectObj, projectRef, { org: input.org });

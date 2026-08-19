@@ -15,7 +15,13 @@ import { nsApiName } from '../util/namespace.js';
 import { htmlToMarkdown } from '../util/richtext.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
-import { buildWritePayload, validatePicklist, verifyAfterWrite, autonomousNote, type SaveResult } from '../salesforce/write.js';
+import {
+  buildWritePayload,
+  validatePicklist,
+  verifyAfterWrite,
+  autonomousNote,
+  type SaveResult,
+} from '../salesforce/write.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const updateReleaseInputShape = {
@@ -27,7 +33,11 @@ export const updateReleaseInputShape = {
   release_date: z.string().optional().describe('Release date (YYYY-MM-DD).'),
   points_goal: z.number().optional().describe('Points goal.'),
   notes: z.string().optional().describe('Release Notes (Markdown → HTML). Max 32768 characters.'),
-  description: z.string().max(1000).optional().describe('Description (plain text). Max 1000 characters.'),
+  description: z
+    .string()
+    .max(1000)
+    .optional()
+    .describe('Description (plain text). Max 1000 characters.'),
   org: z.string().optional().describe('Optional Salesforce org alias/username to target.'),
 };
 

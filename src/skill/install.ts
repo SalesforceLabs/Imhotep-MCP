@@ -75,7 +75,9 @@ export function ensureSkillInstalled(autoInstall = true): SkillInstallResult {
       status: 'written',
       path: dest,
       existedBefore,
-      message: existedBefore ? `Refreshed the Imhotep skill at ${dest}.` : `Installed the Imhotep skill at ${dest}.`,
+      message: existedBefore
+        ? `Refreshed the Imhotep skill at ${dest}.`
+        : `Installed the Imhotep skill at ${dest}.`,
     };
   } catch (err) {
     return {

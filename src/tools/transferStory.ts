@@ -23,7 +23,9 @@ export const transferStoryInputShape = {
   to_release: z
     .string()
     .min(1)
-    .describe('The destination Release (name, Id, or URL). For "move to backlog", use the backlog Release.'),
+    .describe(
+      'The destination Release (name, Id, or URL). For "move to backlog", use the backlog Release.',
+    ),
   org: z.string().optional().describe('Optional Salesforce org alias/username to target.'),
 };
 
@@ -55,7 +57,10 @@ export async function transferStory(
         allowStoryNumber: true,
       });
       if (!story.record) {
-        return { storyCandidates: story.candidates ?? [], note: story.note ?? 'Could not resolve the Story.' };
+        return {
+          storyCandidates: story.candidates ?? [],
+          note: story.note ?? 'Could not resolve the Story.',
+        };
       }
       const storyId = story.record.id as string;
       const storyProjectId = (story.record.project as string | null) ?? null;
@@ -66,7 +71,10 @@ export async function transferStory(
         org: input.org,
       });
       if (!rel.record) {
-        return { releaseCandidates: rel.candidates ?? [], note: rel.note ?? 'Could not resolve the destination Release.' };
+        return {
+          releaseCandidates: rel.candidates ?? [],
+          note: rel.note ?? 'Could not resolve the destination Release.',
+        };
       }
       const releaseId = rel.record.id as string;
       const projectId = rel.record.project as string | null;
@@ -89,7 +97,9 @@ export async function transferStory(
       }
 
       const result = await verifyAfterWrite(conn, storyObj, storyId);
-      const crossNote = crossProject ? ' (moved across Projects; Project re-pointed to match the new Release)' : '';
+      const crossNote = crossProject
+        ? ' (moved across Projects; Project re-pointed to match the new Release)'
+        : '';
       return {
         story: result,
         note: `Moved ${result.storyNumber ?? storyId} to Release "${rel.record.name ?? releaseId}"${crossNote}. ${autonomousNote(config)}`,

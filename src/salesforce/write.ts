@@ -127,11 +127,7 @@ export function clearRecordTypeCache(): void {
 }
 
 /** Validate a value against a configured picklist, throwing a clear error if invalid. */
-export function validatePicklist(
-  obj: ObjectConfig,
-  logicalPicklist: string,
-  value: string,
-): void {
+export function validatePicklist(obj: ObjectConfig, logicalPicklist: string, value: string): void {
   const allowed = obj.picklists?.[logicalPicklist];
   if (allowed && !allowed.includes(value)) {
     throw new ImhotepError(
@@ -167,7 +163,9 @@ export async function verifyAfterWrite(
   )}' LIMIT 1`;
   const res = await conn.query<Record<string, unknown>>(soql);
   if (res.records.length !== 1) {
-    throw new ImhotepError(`Write verification failed: could not re-read ${obj.apiName} ${recordId}.`);
+    throw new ImhotepError(
+      `Write verification failed: could not re-read ${obj.apiName} ${recordId}.`,
+    );
   }
   return shapeRecord(res.records[0]!, fields);
 }

@@ -44,11 +44,9 @@ export async function getRelease(
   const storyObj = config.objects.story;
   if (!releaseObj || !storyObj) throw new Error('Release/Story objects are not configured.');
 
-  const includes = resolveIncludes(
-    input.include,
-    config.defaults?.getRelease?.include,
-    [...AVAILABLE_INCLUDES],
-  );
+  const includes = resolveIncludes(input.include, config.defaults?.getRelease?.include, [
+    ...AVAILABLE_INCLUDES,
+  ]);
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {

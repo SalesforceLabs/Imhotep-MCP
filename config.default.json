@@ -93,12 +93,7 @@
         "actualPoints": "Actual_Points__c",
         "priorityOrder": "Priority_Order__c"
       },
-      "richTextFields": [
-        "description",
-        "acceptanceCriteria",
-        "buildNotes",
-        "deploymentChecklist"
-      ],
+      "richTextFields": ["description", "acceptanceCriteria", "buildNotes", "deploymentChecklist"],
       "fieldRules": {
         "$comment": "maxLength from the live managed-package describe (2026-08-06). Title (Name) is 80; the four rich-text bodies are 131072.",
         "title": { "maxLength": 80 },

@@ -74,7 +74,9 @@ export function translateSalesforceError(err: unknown, ctx: ErrorContext = {}): 
     case 'INVALID_OR_NULL_FOR_RESTRICTED_PICKLIST':
       return `A picklist value isn't allowed${where}: ${message ?? 'invalid picklist value'}.${fieldList}`;
     case 'MALFORMED_ID':
-      return `That doesn't look like a valid Salesforce record Id${where}: ${message ?? ''}`.trim() + '.';
+      return (
+        `That doesn't look like a valid Salesforce record Id${where}: ${message ?? ''}`.trim() + '.'
+      );
     case 'ENTITY_IS_DELETED':
       return `That record has been deleted${where}.`;
     case 'INVALID_SESSION_ID':

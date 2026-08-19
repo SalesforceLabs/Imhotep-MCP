@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  classifyRecordRef,
-  isSalesforceId,
-  extractIdFromUrl,
-} from '../src/util/recordRef.js';
+import { classifyRecordRef, isSalesforceId, extractIdFromUrl } from '../src/util/recordRef.js';
 
 describe('isSalesforceId', () => {
   it('accepts 15- and 18-char ids', () => {

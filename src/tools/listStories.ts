@@ -14,7 +14,11 @@ import { nsApiName } from '../util/namespace.js';
 import { selectFields, shapeRecord, soqlEscape } from '../salesforce/query.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
-import { contextProjectRef, contextReleaseRef, resolveOneInProject } from '../salesforce/context.js';
+import {
+  contextProjectRef,
+  contextReleaseRef,
+  resolveOneInProject,
+} from '../salesforce/context.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const listStoriesInputShape = {
@@ -87,7 +91,9 @@ export async function listStories(
           org: input.org,
         });
         if (!r.record) return { note: r.note ?? 'Could not resolve the Release filter.' };
-        where.push(`${nsApiName(f.release ?? 'Release__c')} = '${soqlEscape(r.record.id as string)}'`);
+        where.push(
+          `${nsApiName(f.release ?? 'Release__c')} = '${soqlEscape(r.record.id as string)}'`,
+        );
       }
       if (input.parent_story) {
         const r = await resolveOne(conn, storyObj, input.parent_story, {
@@ -101,10 +107,14 @@ export async function listStories(
       }
 
       // Scalar / Id filters.
-      if (input.status) where.push(`${nsApiName(f.status ?? 'Status__c')} = '${soqlEscape(input.status)}'`);
-      if (input.type) where.push(`${nsApiName(f.type ?? 'Story_Type__c')} = '${soqlEscape(input.type)}'`);
+      if (input.status)
+        where.push(`${nsApiName(f.status ?? 'Status__c')} = '${soqlEscape(input.status)}'`);
+      if (input.type)
+        where.push(`${nsApiName(f.type ?? 'Story_Type__c')} = '${soqlEscape(input.type)}'`);
       if (input.assigned_to)
-        where.push(`${nsApiName(f.assigned ?? 'Assigned__c')} = '${soqlEscape(input.assigned_to)}'`);
+        where.push(
+          `${nsApiName(f.assigned ?? 'Assigned__c')} = '${soqlEscape(input.assigned_to)}'`,
+        );
       // Tag filter via the Tag_Assignments child relationship (semi-join).
       if (input.tag) {
         const ta = config.objects.tagAssignment;

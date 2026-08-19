@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { markdownToHtml } from '../src/util/richtext.js';
-import { buildWritePayload, validatePicklist, validateFieldLength } from '../src/salesforce/write.js';
+import {
+  buildWritePayload,
+  validatePicklist,
+  validateFieldLength,
+} from '../src/salesforce/write.js';
 import { ImhotepError } from '../src/salesforce/errors.js';
 import type { ImhotepConfig, ObjectConfig } from '../src/config/schema.js';
 
@@ -67,7 +71,9 @@ describe('buildWritePayload', () => {
   });
 
   it('throws on an unknown field', () => {
-    expect(() => buildWritePayload(storyObj, 'story', { nope: 1 }, config)).toThrow(/Unknown field/);
+    expect(() => buildWritePayload(storyObj, 'story', { nope: 1 }, config)).toThrow(
+      /Unknown field/,
+    );
   });
 });
 
@@ -96,8 +102,8 @@ describe('validateFieldLength (sub-inc 7a)', () => {
     expect(() => validateFieldLength(storyObj, 'title', 12345 as unknown)).not.toThrow();
   });
   it('is enforced through buildWritePayload for every write', () => {
-    expect(() =>
-      buildWritePayload(storyObj, 'story', { title: 'x'.repeat(81) }, config),
-    ).toThrow(/maximum is 80/);
+    expect(() => buildWritePayload(storyObj, 'story', { title: 'x'.repeat(81) }, config)).toThrow(
+      /maximum is 80/,
+    );
   });
 });
