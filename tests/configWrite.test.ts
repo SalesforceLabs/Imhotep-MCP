@@ -19,33 +19,35 @@ afterEach(() => {
 describe('setConfigKey', () => {
   it('creates a file and sets a key when none exists', () => {
     const p = tmpFile('config.json');
-    setConfigKey(p, ['defaultOrg'], 'acme-prod');
-    expect(parse(readFileSync(p, 'utf8'))).toEqual({ defaultOrg: 'acme-prod' });
+    setConfigKey(p, ['defaultImhotepOrg'], 'acme-prod');
+    expect(parse(readFileSync(p, 'utf8'))).toEqual({ defaultImhotepOrg: 'acme-prod' });
   });
 
   it('PRESERVES comments when editing an existing commented file', () => {
     const p = tmpFile('config.json');
     writeNewConfigFile(p, starterConfig('global'));
-    setConfigKey(p, ['defaultOrg'], 'acme-prod');
+    setConfigKey(p, ['defaultImhotepOrg'], 'acme-prod');
     const text = readFileSync(p, 'utf8');
     // The documented comments survive the edit...
     expect(text).toContain('Laying the foundation stones');
     expect(text).toContain('// The org where Imhotep is installed');
     // ...and the value is set and parseable.
-    expect(parse(text).defaultOrg).toBe('acme-prod');
+    expect(parse(text).defaultImhotepOrg).toBe('acme-prod');
   });
 
   it('updates an existing value in place', () => {
     const p = tmpFile('config.json');
-    setConfigKey(p, ['defaultOrg'], 'first');
-    setConfigKey(p, ['defaultOrg'], 'second');
-    expect(parse(readFileSync(p, 'utf8')).defaultOrg).toBe('second');
+    setConfigKey(p, ['defaultImhotepOrg'], 'first');
+    setConfigKey(p, ['defaultImhotepOrg'], 'second');
+    expect(parse(readFileSync(p, 'utf8')).defaultImhotepOrg).toBe('second');
   });
 
   it('writes a nested key path', () => {
     const p = tmpFile('config.json');
     setConfigKey(p, ['defaults', 'getStory', 'include'], ['bodies']);
-    expect(parse(readFileSync(p, 'utf8'))).toEqual({ defaults: { getStory: { include: ['bodies'] } } });
+    expect(parse(readFileSync(p, 'utf8'))).toEqual({
+      defaults: { getStory: { include: ['bodies'] } },
+    });
   });
 });
 

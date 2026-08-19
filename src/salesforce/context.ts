@@ -30,8 +30,7 @@ export function contextProjectRef(
   perCall: string | undefined,
   config: ImhotepConfig,
 ): string | null {
-  // New key first; fall back to the deprecated alias in case a raw (un-normalized) config is passed.
-  return perCall ?? config.defaultImhotepProject ?? config.defaultProject ?? null;
+  return perCall ?? config.defaultImhotepProject ?? null;
 }
 
 /**
@@ -42,7 +41,7 @@ export function contextReleaseRef(
   perCall: string | undefined,
   config: ImhotepConfig,
 ): string | null {
-  return perCall ?? config.currentImhotepRelease ?? config.currentRelease ?? null;
+  return perCall ?? config.currentImhotepRelease ?? null;
 }
 
 /**

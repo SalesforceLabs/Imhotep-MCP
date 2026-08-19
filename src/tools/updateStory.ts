@@ -5,7 +5,7 @@
 @Date           8/2/2026
 @Description    imhotep_update_story — update any writable Story field (scalar or rich-text),
                 including `status` (validated against the picklist). Markdown in, HTML out.
-                Refuses system-maintained fields. Covers "mark S-528 Ready" via `status`.
+                Refuses system-maintained fields. Covers "mark S000528 Ready" via `status`.
                 Verify-after-write returns the persisted record. Plan §5.2, §5.5.
 *******************************************************************************************/
 
@@ -15,14 +15,23 @@ import { nsApiName } from '../util/namespace.js';
 import { htmlToMarkdown } from '../util/richtext.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
-import { buildWritePayload, validatePicklist, verifyAfterWrite, autonomousNote, type SaveResult } from '../salesforce/write.js';
+import {
+  buildWritePayload,
+  validatePicklist,
+  verifyAfterWrite,
+  autonomousNote,
+  type SaveResult,
+} from '../salesforce/write.js';
 import { toImhotepError, ImhotepError } from '../salesforce/errors.js';
 
 export const updateStoryInputShape = {
   story: z.string().min(1).describe('The Story to update: number, Id, URL, or title fragment.'),
   title: z.string().max(80).optional().describe('New title (Name). Max 80 characters.'),
   description: z.string().optional().describe('Short user story (Markdown).'),
-  acceptance_criteria: z.string().optional().describe('Acceptance criteria / DoD + tests (Markdown).'),
+  acceptance_criteria: z
+    .string()
+    .optional()
+    .describe('Acceptance criteria / DoD + tests (Markdown).'),
   build_notes: z.string().optional().describe('Solution build / implementation notes (Markdown).'),
   deployment_checklist: z.string().optional().describe('Manual deploy steps (Markdown).'),
   status: z

@@ -16,11 +16,6 @@ describe('contextProjectRef (§5.5 precedence)', () => {
   it('falls back to configured defaultImhotepProject', () => {
     expect(contextProjectRef(undefined, base)).toBe('GPS Accelerators');
   });
-  it('still reads the deprecated defaultProject alias', () => {
-    expect(
-      contextProjectRef(undefined, { apiVersion: '62.0', objects: {}, defaultProject: 'Legacy' }),
-    ).toBe('Legacy');
-  });
   it('returns null when neither is available', () => {
     expect(contextProjectRef(undefined, { apiVersion: '62.0', objects: {} })).toBeNull();
   });
@@ -32,11 +27,6 @@ describe('contextReleaseRef (§5.5 precedence)', () => {
   });
   it('falls back to configured currentImhotepRelease', () => {
     expect(contextReleaseRef(undefined, base)).toBe('R-2026.08');
-  });
-  it('still reads the deprecated currentRelease alias', () => {
-    expect(
-      contextReleaseRef(undefined, { apiVersion: '62.0', objects: {}, currentRelease: 'R-legacy' }),
-    ).toBe('R-legacy');
   });
   it('returns null when neither is available', () => {
     expect(contextReleaseRef(undefined, { apiVersion: '62.0', objects: {} })).toBeNull();

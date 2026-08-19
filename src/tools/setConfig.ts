@@ -12,7 +12,7 @@
 
 import { z } from 'zod';
 import type { ImhotepConfig } from '../config/schema.js';
-import { readScopeConfig, LEGACY_KEY_ALIASES } from '../config/load.js';
+import { readScopeConfig } from '../config/load.js';
 import { configPathForScope, setConfigKey } from '../config/write.js';
 import { withConnection } from '../salesforce/connection.js';
 import { resolveOne } from '../salesforce/resolve.js';
@@ -26,25 +26,17 @@ const SETTABLE_KEYS = [
   'currentImhotepRelease',
   'autonomousMode',
   'skillAutoInstall',
-  // Deprecated aliases (sub-inc 7a) — still accepted, normalized to the new key on write.
-  'defaultOrg',
-  'defaultProject',
-  'currentRelease',
 ] as const;
 type SettableKey = (typeof SETTABLE_KEYS)[number];
-
-/** Canonicalize a (possibly deprecated) settable key to the key actually written. Single source of
- *  truth is LEGACY_KEY_ALIASES in config/load.ts — imported so the rename table can't drift. */
-function canonicalKey(key: SettableKey): string {
-  return LEGACY_KEY_ALIASES[key] ?? key;
-}
 
 export const setConfigInputShape = {
   key: z.enum(SETTABLE_KEYS).describe('The setting to change.'),
   value: z
     .union([z.string(), z.boolean()])
     .describe('The new value (boolean for autonomousMode/skillAutoInstall; string otherwise).'),
-  scope: z.enum(['global', 'project']).describe('Where to write: "global" (~/.imhotep) or "project" (./).'),
+  scope: z
+    .enum(['global', 'project'])
+    .describe('Where to write: "global" (~/.imhotep) or "project" (./).'),
   confirm: z
     .boolean()
     .default(false)
@@ -64,14 +56,12 @@ export interface SetConfigResult {
   note: string;
 }
 
-export async function setConfig(input: SetConfigInput, config: ImhotepConfig): Promise<SetConfigResult> {
-  const requestedKey = input.key as SettableKey;
-  // Normalize a deprecated alias to the key we actually store (sub-inc 7a).
-  const key = canonicalKey(requestedKey);
-  // The legacy alias for this key, if any (so we can clean it out of the file on write).
-  const legacyKey = Object.keys(LEGACY_KEY_ALIASES).find((k) => LEGACY_KEY_ALIASES[k] === key);
+export async function setConfig(
+  input: SetConfigInput,
+  config: ImhotepConfig,
+): Promise<SetConfigResult> {
+  const key = input.key as SettableKey;
   const path = configPathForScope(input.scope);
-  // readScopeConfig normalizes on read, so a stored legacy value surfaces under the canonical key.
   const previous = (readScopeConfig(input.scope).config as Record<string, unknown>)[key];
 
   // `config` is reloaded fresh per invocation by the server, so validation sees any org/project
@@ -94,15 +84,6 @@ export async function setConfig(input: SetConfigInput, config: ImhotepConfig): P
   }
 
   setConfigKey(path, [key], value);
-  // Clear the deprecated alias for this key if the file still carried it, so both names don't
-  // linger on disk (setConfigKey with undefined deletes the key; a no-op if it was absent).
-  if (legacyKey) {
-    try {
-      setConfigKey(path, [legacyKey], undefined);
-    } catch {
-      /* best-effort cleanup; the loader still normalizes the alias on read */
-    }
-  }
   return {
     committed: true,
     key,
@@ -115,8 +96,7 @@ export async function setConfig(input: SetConfigInput, config: ImhotepConfig): P
 }
 
 /**
- * Validate/coerce a value for a given (already-canonicalized) key, resolving live references to
- * catch typos. `key` is the canonical name — never a deprecated alias (setConfig normalizes first).
+ * Validate/coerce a value for a given key, resolving live references to catch typos.
  */
 async function validateValue(
   key: string,

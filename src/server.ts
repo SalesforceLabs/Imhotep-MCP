@@ -159,7 +159,7 @@ async function main(): Promise<void> {
   tool(
     'imhotep_get_story',
     'Get Imhotep Story',
-    'Open one Imhotep Story. Accepts a Story number (e.g. "528", "S-528", "S000528"), an 18/15-' +
+    'Open one Imhotep Story. Accepts a Story number (e.g. "528", "S000528"), an 18/15-' +
       'char Salesforce Id, a pasted record URL, or a Title fragment. Use `include` for "bodies" ' +
       '(rich-text as Markdown), "children" (child Stories), and "tags" (all on by default). On an ' +
       'ambiguous or missing reference, returns candidate Stories rather than an error.',
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
   tool(
     'imhotep_search',
     'Search Imhotep records',
-    'Free-text search across an object\'s Name and body fields when you have no number or exact ' +
+    "Free-text search across an object's Name and body fields when you have no number or exact " +
       'name. Choose object = Story (default), Project, or Release. Returns skinny matches to pick ' +
       'from.',
     searchInputShape,
@@ -206,7 +206,7 @@ async function main(): Promise<void> {
   tool(
     'imhotep_update_story',
     'Update Imhotep Story',
-    'Update one or more writable fields on a Story, including status (e.g. "mark S-528 Ready"). ' +
+    'Update one or more writable fields on a Story, including status (e.g. "mark S000528 Ready"). ' +
       'Rich-text fields are authored in Markdown. System-maintained fields are refused. Preview ' +
       'the change + target org and get user approval before calling.',
     updateStoryInputShape,

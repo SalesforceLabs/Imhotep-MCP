@@ -27,7 +27,7 @@ export const getStoryInputShape = {
     .string()
     .min(1)
     .describe(
-      'The Story to open: a Story number (e.g. "528", "S-528", "S000528"), an 18/15-char ' +
+      'The Story to open: a Story number (e.g. "528", "S000528"), an 18/15-char ' +
         'Salesforce Id, a pasted record URL, or a Title fragment.',
     ),
   include: z
@@ -58,11 +58,9 @@ export async function getStory(
   const storyObj = config.objects.story;
   if (!storyObj) throw new Error('Story object is not configured.');
 
-  const includes = resolveIncludes(
-    input.include,
-    config.defaults?.getStory?.include,
-    [...AVAILABLE_INCLUDES],
-  );
+  const includes = resolveIncludes(input.include, config.defaults?.getStory?.include, [
+    ...AVAILABLE_INCLUDES,
+  ]);
 
   try {
     return await withConnection(input.org, config.apiVersion, async (conn) => {

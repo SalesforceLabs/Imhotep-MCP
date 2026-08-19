@@ -1,19 +1,16 @@
 # Imhotep MCP Server
 
-> [!IMPORTANT]
-> **Status: v1, pre-release.** The full v1 toolset is built and working; a public release (GitHub + npm) follows once the project completes its open-source review.
-
-> _Laying the foundation stones…_
-
-An [MCP](https://modelcontextprotocol.io) server that lets you work with your
+Imhotep MCP is an [MCP](https://modelcontextprotocol.io) server that lets you work with your
 **[Imhotep App Builder](https://github.com/SalesforceLabs/Imhotep-App-Builder)** data — Projects,
 Releases, and Stories — from any MCP client (Claude Code, Claude Desktop, and others). Natural
-requests like _"show me S-528 and its child stories"_ or _"mark S-528 as Ready"_ each resolve to
+requests like _"show me S000528 and its child stories"_ or _"mark S000528 as Ready"_ each resolve to
 a single, reliable tool call, run **as the authenticated Salesforce user** so the platform
 enforces your permissions.
 
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
+
+**v1.0.0 was released on 19 August 2026.**
 
 ## Prerequisites
 
@@ -33,15 +30,13 @@ run `init` once, then set your org. (Instructions below are for **Claude Code**;
 work in other MCP clients via their own server-registration mechanism.)
 
 - **Option A — npx (zero-install).** The simplest path: no clone, no build; Claude Code fetches the
-  published package on demand. _Available once the project is publicly released._
+  published package on demand.
 - **Option B — install from source (clone & build).** Clone the repo, build it, and register the
-  built server. _**Available now**_ — and always available for anyone who prefers to run from source.
+  built server — for anyone who prefers to run from source.
 
 Pick one, follow its subsection, then do **Finish setup** at the end.
 
 ### Option A — npx (zero-install)
-
-> _Available after public release._ Until then, use Option B.
 
 Register the server with Claude Code so it fetches the package on demand — no local copy to
 maintain. **From your terminal, run this from any directory:**
@@ -72,7 +67,7 @@ for all projects, or a `.mcp.json` in a project root to scope it to that project
 `imhotep-mcp` subfolder there, then the `cd` moves you into it for the build:
 
 ```bash
-git clone https://github.com/SFDC-Assets-emu/Imhotep-MCP.git imhotep-mcp
+git clone https://github.com/SalesforceLabs/Imhotep-MCP.git imhotep-mcp
 cd imhotep-mcp
 npm install
 npm run build
@@ -162,10 +157,6 @@ Remove the pieces in any order:
      `npm uninstall -g imhotep-mcp`.)
    - **Option B (from source):** delete the cloned directory (`rm -rf /path/to/imhotep-mcp`).
 
-> **Beta testers:** you installed from a pre-release repository. To move to the supported release
-> later, uninstall as above (steps 1, 2, 4 — you can keep `~/.imhotep/` in step 3), then reinstall
-> from the public repository using **Option A**.
-
 ## Tools
 
 Each tool maps to a single intent. Inputs are human-friendly — a Story number, a name, a
@@ -194,7 +185,7 @@ Rich-text fields (Story descriptions, Release notes) are returned as Markdown.
 
 - **`imhotep_create_story`** — create a Story under a Release; its Project is filled in
   automatically. Set a parent to create a child story. Write rich-text fields in Markdown.
-- **`imhotep_update_story`** — change any writable field, including status (e.g. "mark S-528
+- **`imhotep_update_story`** — change any writable field, including status (e.g. "mark S000528
   Ready").
 - **`imhotep_transfer_story`** — move a Story to another Release (its Project stays consistent
   automatically); "move to backlog" transfers it to the backlog Release.
@@ -248,11 +239,6 @@ Precedence, most-specific wins: per-call `org` argument → project `./imhotep.c
 `defaultImhotepProject` and `currentImhotepRelease` (typically the release is set per-project and
 moves as the build advances).
 
-> **Renamed keys:** `defaultOrg` → **`defaultImhotepOrg`**, `defaultProject` →
-> **`defaultImhotepProject`**, and `currentRelease` → **`currentImhotepRelease`** (clearer, since
-> "org"/"project"/"release" are each overloaded terms). The old names still work but are deprecated
-> and will warn; update your config files when convenient.
-
 Behavioral guidance ("we skip the Testing status", "tag every Defect with 'triage'") belongs in
 your project's `CLAUDE.md` or memories, not in `imhotep.config.json` — config is for structure the
 server parses; `CLAUDE.md` is for guidance the model interprets.
@@ -273,7 +259,7 @@ skill is overwritten to stay current, don't hand-edit it — put your own workfl
 `skillAutoInstall: false`. The skill is Claude-specific; in other MCP clients the tools still work
 via their descriptions, just without this guidance layer.
 
-## Stories vs. plans (how they fit together)
+## Stories vs. plans (how they might fit together)
 
 If you're using an AI assistant to help plan and build in Salesforce, you're probably generating
 all kinds of plans (or specs, or design docs) that you didn't have before generative AI came
@@ -320,35 +306,3 @@ The server is versioned on its **own** semantic-version line (starting at **1.0.
 of the Imhotep App Builder managed package. This release targets **Imhotep App Builder v2.0.0+**.
 Breaking changes are gated behind a new major version you opt into (pinning `imhotep-mcp@1` keeps
 you on compatible minor/patch updates).
-
-## Development
-
-```bash
-npm install        # install dependencies
-npm run typecheck  # type-check without emitting
-npm run build      # compile TypeScript to dist/
-npm test           # run the test suite
-npm run lint       # lint
-npm run format     # format with Prettier
-```
-
-Maintainers: see [PUBLISHING.md](PUBLISHING.md) for the release runbook (publishing is gated on
-open-source clearance).
-
-## Repository layout
-
-```
-src/            server source
-  cli/          CLI subcommands (e.g. `imhotep-mcp init`)
-  config/       config loading, deep-merge, and comment-preserving writes
-  salesforce/   sf-CLI auth, jsforce connection, queries, writes, error translation
-  tools/        MCP tool definitions (one per user intent)
-  util/         shared helpers (namespace, rich text, record references)
-skill/          the shipped skill (judgment layer for AI clients)
-tests/          test suite
-config.default.json   shipped managed-package schema defaults
-```
-
-## License
-
-Apache-2.0. See [LICENSE.txt](LICENSE.txt).

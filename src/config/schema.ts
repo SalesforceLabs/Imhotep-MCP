@@ -87,22 +87,6 @@ export interface ImhotepConfig {
   defaultImhotepProject?: string;
   /** Current working-context Imhotep Release (name, Id, or URL). */
   currentImhotepRelease?: string;
-
-  /**
-   * @deprecated Renamed to `defaultImhotepOrg` (sub-inc 7a). Still read for back-compat;
-   * the loader normalizes it into the new key and warns. Remove in a future major.
-   */
-  defaultOrg?: string;
-  /**
-   * @deprecated Renamed to `defaultImhotepProject` (sub-inc 7a). Still read for back-compat;
-   * the loader normalizes it into the new key and warns. Remove in a future major.
-   */
-  defaultProject?: string;
-  /**
-   * @deprecated Renamed to `currentImhotepRelease` (sub-inc 7a). Still read for back-compat;
-   * the loader normalizes it into the new key and warns. Remove in a future major.
-   */
-  currentRelease?: string;
   /** Custom fields the customer added to managed objects, by object → logical → API name. */
   customFields?: Record<string, FieldMap>;
 }

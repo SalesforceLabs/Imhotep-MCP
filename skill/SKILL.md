@@ -1,6 +1,6 @@
 ---
 name: imhotep
-description: "Work with Imhotep App Builder data (Projects, Releases, Stories) through the Imhotep MCP server. Use when the user wants to find, open, list, create, update, or move Imhotep records — e.g. \"show me S-528 and its child stories\", \"what's in flight in release 11.3\", \"create a story for the intake form\", \"mark S-528 Ready\", \"move S-528 to the 12.0 release\", \"set my default Imhotep org\". TRIGGER when: the request names an Imhotep Story/Release/Project (or a Story number like S-000528), or asks to read/create/update/transfer that data, or to configure the Imhotep MCP server. DO NOT TRIGGER when: the work is general Salesforce metadata/Apex/Flow/LWC, or DevOps Center Work Items (Imhotep 'Story' is not a DevOps Center 'Work Item'), or any org that doesn't have Imhotep App Builder installed."
+description: "Work with Imhotep App Builder data (Projects, Releases, Stories) through the Imhotep MCP server. Use when the user wants to find, open, list, create, update, or move Imhotep records — e.g. \"show me S000528 and its child stories\", \"what's in flight in release 11.3\", \"create a story for the intake form\", \"mark S000528 Ready\", \"move S000528 to the 12.0 release\", \"set my default Imhotep org\". TRIGGER when: the request names an Imhotep Story/Release/Project (or a Story number like S000528), or asks to read/create/update/transfer that data, or to configure the Imhotep MCP server. DO NOT TRIGGER when: the work is general Salesforce metadata/Apex/Flow/LWC, or DevOps Center Work Items (Imhotep 'Story' is not a DevOps Center 'Work Item'), or any org that doesn't have Imhotep App Builder installed."
 ---
 
 # Imhotep App Builder
@@ -23,7 +23,7 @@ Release, which lives under a Project. Stories carry rich-text bodies, child stor
 ## Tool map (intent → tool)
 
 **Find & read**
-- Open one Story → `imhotep_get_story` (accepts a number like `528`/`S-528`/`S000528`, an Id, a
+- Open one Story → `imhotep_get_story` (accepts a number like `528`/`S000528`, an Id, a
   pasted record URL, or a title fragment; returns candidates if ambiguous).
 - "What's in flight" / "stories in release X" → `imhotep_list_stories` (filters: release, project,
   status, type, assignee, parent, tag — all optional and AND-combined).
@@ -34,7 +34,7 @@ Release, which lives under a Project. Stories carry rich-text bodies, child stor
 **Create & change** (writes — see *Confirm before writing* below)
 - New Story → `imhotep_create_story` (you give the Release; the server fills in the Project). Set
   `parent_story` to make it a child story.
-- Change a Story, including status ("mark S-528 Ready") → `imhotep_update_story`.
+- Change a Story, including status ("mark S000528 Ready") → `imhotep_update_story`.
 - Move a Story to another Release → `imhotep_transfer_story` ("move to backlog" = transfer to the
   backlog Release; the server keeps the Story's Project consistent).
 - Change a Release (status, dates, points goal, Release Notes) → `imhotep_update_release`.
@@ -167,9 +167,6 @@ omits them, the server falls back to configured defaults (`defaultImhotepOrg`, `
   user in a repo whose org differs from their global default.
 - Similarly, offer to set `defaultImhotepProject` / `currentImhotepRelease` when a user repeatedly
   works in the same project/release. This makes "what's in flight" work without restating context.
-  (These keys were formerly `defaultOrg` / `defaultProject` / `currentRelease` — the old names still
-  work but are deprecated; use the new `defaultImhotepOrg` / `defaultImhotepProject` /
-  `currentImhotepRelease`.)
 - A record reference can be a name, a Story number, an 18/15-char Id, or a pasted record URL — pass
   whatever the user gives you; the server resolves it (and returns candidates if it's ambiguous).
 
@@ -189,10 +186,8 @@ global for this repo. Typical flow:
 
 You don't have to hand-author the file — `imhotep_set_config` (`scope: "project"`) creates
 `./imhotep.config.json` on first write. `imhotep_init_config` (`scope: "project"`) is available too,
-for scaffolding a fully-commented starter up front. **Always write the current key names**
-(`defaultImhotepProject`, `currentImhotepRelease`) — not the deprecated `defaultProject` /
-`currentRelease`. After setup, "what's in flight" / "create a story titled …" work in this repo
-without restating org/project/release.
+for scaffolding a fully-commented starter up front. After setup, "what's in flight" / "create a
+story titled …" work in this repo without restating org/project/release.
 
 ## Shipped vs. yours (customize in the right place)
 
