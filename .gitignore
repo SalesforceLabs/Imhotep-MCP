@@ -26,10 +26,19 @@ imhotep.config.json
 # LOCAL ONLY: these are the author's working notes, not product documentation.
 docs/plans/
 
+# Maintainer-only, not customer-facing — kept on the maintainer's disk, not
+# published to the public repo:
+#   PUBLISHING.md  — release runbook (also absent from package.json "files")
+#   .mcp.json      — local dogfooding wiring (registers the published npx server
+#                    in this repo; the README already shows the same snippet)
+PUBLISHING.md
+.mcp.json
+
 # Editor / OS
 .DS_Store
 .idea/
 .claude/
+.cursor/
 *.swp
 
 # npm packaging artifact

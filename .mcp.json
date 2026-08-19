@@ -1,8 +1,0 @@
-{
-  "mcpServers": {
-    "imhotep": {
-      "command": "npx",
-      "args": ["-y", "imhotep-mcp@1"]
-    }
-  }
-}
