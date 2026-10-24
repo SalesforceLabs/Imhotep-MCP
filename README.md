@@ -10,7 +10,7 @@ enforces your permissions.
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
 
-**v1.0.0 was released on 19 August 2026.**
+**v1.1 was released on 24 October 2026** — adds bulk Story tools. See [Revision History](#revision-history).
 
 ## Prerequisites
 
@@ -136,6 +136,19 @@ Keeping current depends on which install option you used:
   ```
 
   Then restart your MCP client so it relaunches the server.
+
+**Updating is not reinstalling.** You don't need to re-register the server (`claude mcp add` will
+just report that `imhotep` already exists) or re-clone the repo. Re-running `init` is safe at any
+time — it gives the same result as an update.
+
+### What an update touches
+
+| File | Yours to tailor? | What an update (or re-running `init`) does |
+|---|---|---|
+| `~/.imhotep/config.json` and `./imhotep.config.json` | Yes | **Never touched.** `init` won't overwrite an existing config, and `imhotep_set_config` changes one key in place, keeping your comments. |
+| Shipped defaults (`config.default.json`, inside the package) | No | Replaced with the new version. Your config is layered on top, so your overrides still win. |
+| The skill, `~/.claude/skills/imhotep/SKILL.md` | No | **Overwritten** on every server start to keep it current — hand-edits are lost. Put your own guidance in a separate `imhotep-custom` skill, or set `skillAutoInstall: false` to manage the skill yourself. |
+| Your MCP registration (`.mcp.json` / `~/.claude.json`) | Yes | Never touched. |
 
 Either way, **the skill updates itself** — the server refreshes `~/.claude/skills/imhotep/` on every
 start, so a newer server brings a newer skill automatically (unless you set `skillAutoInstall:
@@ -321,3 +334,23 @@ The server is versioned on its **own** semantic-version line (starting at **1.0.
 of the Imhotep App Builder managed package. This release targets **Imhotep App Builder v2.0.0+**.
 Breaking changes are gated behind a new major version you opt into (pinning `imhotep-mcp@1` keeps
 you on compatible minor/patch updates).
+
+## Revision History
+
+<strong>1.1 Bulk Story tools (24 Oct 2026)</strong> - Adds `imhotep_create_stories`,
+`imhotep_update_stories`, and `imhotep_transfer_stories` to create, update, or move up to 200
+Stories in a single all-or-nothing call — fewer round-trips, less time, and fewer tokens than
+looping the single-Story tools, which are unchanged.
+
+<strong>1.0 Initial release (19 Aug 2026)</strong> - The first release is focused on the core use
+case of reading and navigating Imhotep Projects, Releases, and Stories, creating and updating
+individual Stories (including status changes and moves between Releases), updating Releases, and
+managing the server's configuration — plus the shipped skill that teaches an AI client how to use
+the tools well.
+
+See the [CHANGELOG](CHANGELOG.md) for full release notes.
+
+## Contributors
+
+- Lead Builder: [Mitch Lynch](https://www.linkedin.com/in/rmitchlynch), Distinguished Solution
+  Engineer, Salesforce

@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking schema/interface changes are gated behind a new major version (e.g. `@2`).
 
-## 1.1.0 — Unreleased
+## 1.1.0 — 2026-10-24
 
 Bulk Story writes: create, update, or move many Stories in one call — fewer round-trips, less
 time, and fewer tokens than looping the single-Story tools.
