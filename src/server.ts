@@ -32,6 +32,9 @@ import { createStory, createStoryInputShape } from './tools/createStory.js';
 import { updateStory, updateStoryInputShape } from './tools/updateStory.js';
 import { transferStory, transferStoryInputShape } from './tools/transferStory.js';
 import { updateRelease, updateReleaseInputShape } from './tools/updateRelease.js';
+import { createStories, createStoriesInputShape } from './tools/createStories.js';
+import { updateStories, updateStoriesInputShape } from './tools/updateStories.js';
+import { transferStories, transferStoriesInputShape } from './tools/transferStories.js';
 import { getConfig, getConfigInputShape } from './tools/getConfig.js';
 import { setConfig, setConfigInputShape } from './tools/setConfig.js';
 import { initConfig, initConfigInputShape } from './tools/initConfig.js';
@@ -231,6 +234,45 @@ async function main(): Promise<void> {
       'get user approval before calling.',
     updateReleaseInputShape,
     (args, config) => updateRelease(args as never, config),
+  );
+
+  // --- Bulk Story write tools (v1.1). Up to 200 Stories per call, all-or-nothing: every item is
+  // validated first, and if any item fails nothing is saved. ---
+
+  tool(
+    'imhotep_create_stories',
+    'Create Imhotep Stories (bulk)',
+    'Create 1–200 Stories in one all-or-nothing call — e.g. all the Stories for a signed-off ' +
+      'build plan. `defaults` (release, type, status, record_type, parent_story) apply to every ' +
+      'item unless the item sets its own; each Project is derived from its Release. Parent ' +
+      'Stories must already exist. If any item fails, nothing is created and every failure is ' +
+      'returned by index. Returns the new Stories (skinny, with SNNNNNN numbers) in input order. ' +
+      'Preview the full batch + target org and get user approval before calling.',
+    createStoriesInputShape,
+    (args, config) => createStories(args as never, config),
+  );
+
+  tool(
+    'imhotep_update_stories',
+    'Update Imhotep Stories (bulk)',
+    'Update writable fields on 1–200 Stories in one all-or-nothing call (e.g. "mark these five ' +
+      'Ready"). Each item names a Story by number, Id, or URL (no title fragments) plus only the ' +
+      'fields to change; rich-text fields are Markdown and overwrite the whole field. If any item ' +
+      'fails, nothing is saved. Preview the full batch + target org and get user approval before ' +
+      'calling.',
+    updateStoriesInputShape,
+    (args, config) => updateStories(args as never, config),
+  );
+
+  tool(
+    'imhotep_transfer_stories',
+    'Transfer Imhotep Stories to another Release (bulk)',
+    'Move 1–200 Stories to another Release in one all-or-nothing call (e.g. "move these to the ' +
+      'backlog"). A top-level to_release applies to every item unless the item names its own; ' +
+      "each Story's Project is kept consistent automatically. Stories are named by number, Id, " +
+      'or URL. If any item fails, nothing is moved. Preview + get user approval before calling.',
+    transferStoriesInputShape,
+    (args, config) => transferStories(args as never, config),
   );
 
   // --- Config-management tools (§5.2, §7). The SERVER performs the file I/O; the agent just

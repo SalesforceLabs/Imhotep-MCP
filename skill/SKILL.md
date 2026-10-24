@@ -39,6 +39,18 @@ Release, which lives under a Project. Stories carry rich-text bodies, child stor
   backlog Release; the server keeps the Story's Project consistent).
 - Change a Release (status, dates, points goal, Release Notes) → `imhotep_update_release`.
 
+**Bulk create & change** (2+ Stories at once — prefer these over looping the single tools)
+- Several new Stories (e.g. all the Stories for a signed-off plan) → `imhotep_create_stories`. Put
+  shared values (release, type, status, record_type, parent_story) in `defaults`; items override.
+- Change several Stories ("mark these Ready") → `imhotep_update_stories` — each item carries only
+  the fields it changes.
+- Move several Stories to a Release ("move these to the backlog") → `imhotep_transfer_stories`.
+- Rules: up to **200** items per call; **all-or-nothing** — if any item fails, nothing is saved and
+  the result lists failures by item index (fix them and resend the *whole* batch). Name Stories by
+  **number, Id, or URL** — no title fragments in a batch. A parent Story must **already exist**;
+  to build a parent with children, create the parent first, then the children in a second call.
+  The update discipline below (read first, re-send the merged whole) applies to every item.
+
 **Configure**
 - Show / change settings → `imhotep_get_config` / `imhotep_set_config`; scaffold a config file →
   `imhotep_init_config`.
@@ -135,13 +147,15 @@ draft within them up front so you don't waste a round-trip on a rejection:
 ## Confirm before writing
 
 Platform permissions decide what the user *can* do; **you** decide what they *should* do right now.
-Before any write (`create_story`, `update_story`, `transfer_story`, `update_release`) or a config
-change:
+Before any write (`create_story`, `update_story`, `transfer_story`, `update_release`, and the bulk
+`create_stories` / `update_stories` / `transfer_stories`) or a config change:
 
 1. **Present the complete change set — just before writing.** Show every field that will change
    and its new value. For an edited rich-text body, show the **merged result you're about to
    send** (you read it first, preserved what was there, and patched/appended — see *Editing a
    Story*), not a vague "I'll update the notes." Name the record (Story #/name) and the org.
+   For a **bulk** write, present the whole batch — every Story and its changes — compactly (a
+   table works well), and get one OK for the batch.
 2. **Get the user's explicit OK immediately before the tool call.** This holds for every write —
    `create_story`, `update_story`, `transfer_story`, `update_release` — and config changes. It
    matters most against **production** data.

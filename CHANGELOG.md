@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking schema/interface changes are gated behind a new major version (e.g. `@2`).
 
+## 1.1.0 — Unreleased
+
+Bulk Story writes: create, update, or move many Stories in one call — fewer round-trips, less
+time, and fewer tokens than looping the single-Story tools.
+
+### Added
+
+- **`imhotep_create_stories`** — create 1–200 Stories in one call. Batch `defaults` (release,
+  type, status, record type, parent story) apply to every item unless it overrides them; each
+  Project is derived from its Release. Parent Stories must already exist.
+- **`imhotep_update_stories`** — update writable fields on 1–200 Stories in one call.
+- **`imhotep_transfer_stories`** — move 1–200 Stories to another Release in one call, keeping each
+  Story's Project consistent.
+
+### Behavior
+
+- **All-or-nothing.** Every item is validated (picklists, field lengths, read-only fields,
+  references) before any write, and the save uses Salesforce's all-or-none collection call. If any
+  item fails, nothing is saved; the result lists every failing item by index.
+- **Exact references in a batch.** Stories are named by number, Id, or URL; title fragments are
+  refused so a fuzzy match can't hit the wrong record. Release names still resolve (scoped to the
+  Story's Project for transfers), and an ambiguous one rejects the batch with candidates.
+- **Skinny results.** Written Stories are re-read in one query and returned without rich-text
+  bodies, in input order.
+- The single-Story tools are unchanged.
+
 ## 1.0.0 — 2026-08-19
 
 First release. Work with your Imhotep App Builder data — Projects, Releases, and Stories — from any

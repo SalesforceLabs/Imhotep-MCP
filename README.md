@@ -192,6 +192,21 @@ Rich-text fields (Story descriptions, Release notes) are returned as Markdown.
 - **`imhotep_update_release`** — update Release fields, including Release Notes (written in
   Markdown).
 
+**Bulk create, update & move** (up to 200 Stories per call)
+
+- **`imhotep_create_stories`** — create many Stories at once, e.g. every Story for a signed-off
+  build plan. Shared `defaults` (release, type, status, record type, parent story) apply to each
+  Story unless it sets its own. Parent stories must already exist.
+- **`imhotep_update_stories`** — change fields on many Stories at once (e.g. "mark these five
+  Ready"); each item carries only the fields it changes.
+- **`imhotep_transfer_stories`** — move many Stories to another Release at once (e.g. "move these
+  to the backlog"); each Story's Project stays consistent automatically.
+
+Bulk calls are **all-or-nothing**: every item is checked before anything is written, and if any
+item fails, nothing is saved — the result lists each failing item by its position so you can fix
+it and resend the batch. Inside a batch, name Stories by number, Id, or URL (not a title fragment),
+so nothing lands on the wrong record. The single-Story tools above are unchanged.
+
 Writes run as your Salesforce user, so your permissions and Imhotep's validation rules apply.
 System-maintained fields (auto-numbers, rollups, formulas) can't be written. You author rich text
 in Markdown; the server stores it as HTML.
