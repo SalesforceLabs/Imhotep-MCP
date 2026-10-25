@@ -360,5 +360,4 @@ See the [CHANGELOG](CHANGELOG.md) for full release notes.
 
 ## Contributors
 
-- Lead Builder: [Mitch Lynch](https://www.linkedin.com/in/rmitchlynch), Distinguished Solution
-  Engineer, Salesforce
+[Mitch Lynch](https://www.linkedin.com/in/rmitchlynch), Distinguished Solution Engineer, Salesforce
