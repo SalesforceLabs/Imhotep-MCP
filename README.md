@@ -337,6 +337,10 @@ you on compatible minor/patch updates).
 
 ## Revision History
 
+<strong>1.1.2 Validation library upgrade (25 Oct 2026)</strong> - Upgrades `zod` to 4.x, clearing the
+last `npm audit` advisory. Tools and configuration are unchanged; only the wording of input
+validation errors differs.
+
 <strong>1.1.1 Dependency security refresh (25 Oct 2026)</strong> - Updates dependencies to their
 latest compatible releases to clear `npm audit` advisories. No changes to tools or configuration.
 
