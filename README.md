@@ -10,7 +10,8 @@ enforces your permissions.
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
 
-**v1.1 was released on 24 October 2026** — adds bulk Story tools. See [Revision History](#revision-history).
+**v1.1.2 was released on 25 October 2026** — dependency security updates on top of v1.1's bulk Story
+tools. See [Revision History](#revision-history).
 
 ## Prerequisites
 
