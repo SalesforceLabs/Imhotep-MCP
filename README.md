@@ -337,6 +337,9 @@ you on compatible minor/patch updates).
 
 ## Revision History
 
+<strong>1.1.1 Dependency security refresh (25 Oct 2026)</strong> - Updates dependencies to their
+latest compatible releases to clear `npm audit` advisories. No changes to tools or configuration.
+
 <strong>1.1 Bulk Story tools (24 Oct 2026)</strong> - Adds `imhotep_create_stories`,
 `imhotep_update_stories`, and `imhotep_transfer_stories` to create, update, or move up to 200
 Stories in a single all-or-nothing call — fewer round-trips, less time, and fewer tokens than
