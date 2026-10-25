@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking schema/interface changes are gated behind a new major version (e.g. `@2`).
 
+## 1.1.2 — 2026-10-25
+
+Upgrades the `zod` validation library from 3.x to 4.x, clearing the last `npm audit` advisory
+(`npm audit` now reports 0 vulnerabilities). No tool, schema, or config changes.
+
+### Security
+
+- `zod` 3.x → 4.6.7 (fixes memory exhaustion when validating oversized constrained collections).
+
+### Behavior
+
+- **Validation error wording changed.** Messages for rejected tool arguments now use zod 4's
+  wording — e.g. `Invalid option: expected one of "Blocked"|"Defined"|…` instead of
+  `Invalid enum value. Expected 'Blocked' | 'Defined' | …`. The same inputs are accepted and
+  rejected as before.
+- **Tool input schemas** list each field's allowed values inline instead of by internal `$ref`, and
+  no longer advertise `additionalProperties: false`. Unknown argument keys are still dropped, as
+  before.
+
 ## 1.1.1 — 2026-10-25
 
 Dependency security refresh. No tool, schema, or config changes.
