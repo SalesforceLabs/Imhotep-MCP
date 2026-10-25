@@ -337,7 +337,7 @@ you on compatible minor/patch updates).
 
 ## Revision History
 
-<strong>1.1.1 Dependency security refresh (24 Oct 2026)</strong> - Updates dependencies to their
+<strong>1.1.1 Dependency security refresh (25 Oct 2026)</strong> - Updates dependencies to their
 latest compatible releases to clear `npm audit` advisories. No changes to tools or configuration.
 
 <strong>1.1 Bulk Story tools (24 Oct 2026)</strong> - Adds `imhotep_create_stories`,

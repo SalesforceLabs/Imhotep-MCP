@@ -6,19 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 Breaking schema/interface changes are gated behind a new major version (e.g. `@2`).
 
-## 1.1.1 — 2026-10-24
+## 1.1.1 — 2026-10-25
 
 Dependency security refresh. No tool, schema, or config changes.
 
 ### Security
 
 - Refreshed the lockfile so every dependency resolves to its latest compatible release, clearing
-  17 of the 19 advisories `npm audit` reported against 1.1.0 (including the MCP SDK, jsforce,
-  markdown-it, undici, and the build/test toolchain).
-- Remaining: `zod` (fix requires the 3 → 4 major upgrade; tracked separately) and `body-parser`
-  (fixed release still inside the install cooldown window; picked up in a later refresh).
-- Context: the server runs over stdio only and never opens an HTTP listener, so the advisories in
-  the SDK's HTTP-transport dependencies (express, body-parser, hono, proxy-addr) aren't reachable.
+  18 of the 19 advisories `npm audit` reported against 1.1.0 (including the MCP SDK, jsforce,
+  markdown-it, undici, body-parser, and the build/test toolchain).
+- Remaining: `zod` (fix requires the 3 → 4 major upgrade; planned for a later release).
+- Context: the server runs over stdio only and never opens an HTTP listener, so the advisories that
+  were in the SDK's HTTP-transport dependencies (express, body-parser, hono, proxy-addr) weren't
+  reachable.
 
 ## 1.1.0 — 2026-10-24
 
