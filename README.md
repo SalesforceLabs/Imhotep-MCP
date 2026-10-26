@@ -10,6 +10,9 @@ enforces your permissions.
 The server targets the **managed** Imhotep package (namespace `iab__`), and ships alongside a
 **skill** that teaches an AI client when and how to use the tools.
 
+New to it? Start with [What is the Imhotep MCP Server?](https://imhotepsupport-dev-ed.develop.my.site.com/resourcehub/s/article/What-is-the-Imhotep-MCP-Server) on the
+Imhotep App Builder Resource Hub.
+
 **v1.1.2 was released on 25 October 2026** — dependency security updates on top of v1.1's bulk Story
 tools. See [Revision History](#revision-history).
 
@@ -17,7 +20,8 @@ tools. See [Revision History](#revision-history).
 
 1. **[Imhotep App Builder](https://appexchange.salesforce.com/appxListingDetail?listingId=653308da-f440-4d28-8b6a-b7ed2a1394b3&tab=e)**
    (managed package, **v2.0.0 or later**) installed in the Salesforce org where your
-   Projects/Releases/Stories live.
+   Projects/Releases/Stories live. New to the app? See
+   [What is Imhotep App Builder?](https://imhotepsupport-dev-ed.develop.my.site.com/resourcehub/s/article/What-is-Imhotep-App-Builder).
 2. **[Salesforce CLI](https://developer.salesforce.com/tools/salesforcecli) (`sf`)** installed and
    authenticated to that org — this is how the server authenticates and how your permissions are
    enforced.
@@ -329,6 +333,10 @@ Either way, the plan carries the *how-to-build-it* detail; the Story carries the
 and what-we-shipped* record. The shipped skill teaches the assistant to keep each field at the
 right altitude — see [The skill](#the-skill).
 
+For a longer walkthrough, see
+[Building with AI: Stories, Plans, and the Imhotep MCP](https://imhotepsupport-dev-ed.develop.my.site.com/resourcehub/s/article/Building-with-AI-Stories-Plans-and-the-Imhotep-MCP)
+on the Resource Hub.
+
 ## Compatibility & versioning
 
 The server is versioned on its **own** semantic-version line (starting at **1.0.0**), independent
@@ -348,7 +356,8 @@ latest compatible releases to clear `npm audit` advisories. No changes to tools 
 <strong>1.1 Bulk Story tools (24 Oct 2026)</strong> - Adds `imhotep_create_stories`,
 `imhotep_update_stories`, and `imhotep_transfer_stories` to create, update, or move up to 200
 Stories in a single all-or-nothing call — fewer round-trips, less time, and fewer tokens than
-looping the single-Story tools, which are unchanged.
+looping the single-Story tools, which are unchanged. See the
+[Imhotep MCP v1.1 Release Notes](https://imhotepsupport-dev-ed.develop.my.site.com/resourcehub/s/article/Imhotep-MCP-v1-1-Release-Notes-25-October-2026) on the Resource Hub.
 
 <strong>1.0 Initial release (19 Aug 2026)</strong> - The first release is focused on the core use
 case of reading and navigating Imhotep Projects, Releases, and Stories, creating and updating
@@ -357,6 +366,12 @@ managing the server's configuration — plus the shipped skill that teaches an A
 the tools well.
 
 See the [CHANGELOG](CHANGELOG.md) for full release notes.
+
+## Support
+
+Questions, bugs, or feature requests for the MCP server: open an
+[issue in this repo](https://github.com/SalesforceLabs/Imhotep-MCP/issues). For Imhotep App Builder
+itself, see [How Do I Get Support?](https://imhotepsupport-dev-ed.develop.my.site.com/resourcehub/s/article/How-Do-I-Get-Support) on the Resource Hub.
 
 ## Contributors
 
